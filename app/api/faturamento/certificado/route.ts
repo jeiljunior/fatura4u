@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { encryptJSON } from '@/lib/faturamento/crypto'
 import { parseCertificado } from '@/lib/faturamento/nfse/certificado'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 async function getBusinessId() {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('business_id')
-    .eq('id', user.id)
-    .single()
-
-  return profile?.business_id ?? null
+  return (await getEffectiveBusinessId())?.businessId ?? null
 }
 
 // GET — status do certificado (nunca o arquivo/senha)

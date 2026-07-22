@@ -1,16 +1,12 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 import ConfiguracoesClient from './ConfiguracoesClient'
 
 export default async function ConfiguracoesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('business_id').eq('id', user.id).single()
-  if (!profile?.business_id) redirect('/login')
-  const businessId = profile.business_id as string
+  const effective = await getEffectiveBusinessId()
+  if (!effective) redirect('/login')
+  const businessId = effective.businessId
 
   const [{ data: business }, { data: config }, { data: certificado }, { data: gateways }] = await Promise.all([
     supabaseAdmin.from('businesses').select('*').eq('id', businessId).single(),

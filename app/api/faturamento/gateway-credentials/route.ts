@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { encryptJSON } from '@/lib/faturamento/crypto'
 import type { GatewayProvider } from '@/lib/faturamento/types'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 const PROVIDERS: GatewayProvider[] = ['asaas', 'stripe', 'pagarme', 'mercadopago']
 
 async function getBusinessId() {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase.from('profiles').select('business_id').eq('id', user.id).single()
-  return profile?.business_id ?? null
+  return (await getEffectiveBusinessId())?.businessId ?? null
 }
 
 // GET — status das conexões do tenant, sem nunca expor a credencial cifrada

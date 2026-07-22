@@ -1,21 +1,12 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 export default async function DashboardHome() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('business_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.business_id) redirect('/login')
-  const businessId = profile.business_id as string
+  const effective = await getEffectiveBusinessId()
+  if (!effective) redirect('/login')
+  const businessId = effective.businessId
 
   const [{ count: totalClientes }, { count: cobrancasPendentes }, { count: notasEmitidas }] = await Promise.all([
     supabaseAdmin.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', businessId),

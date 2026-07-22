@@ -1,20 +1,16 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 import ClientesClient from './ClientesClient'
 
 export default async function ClientesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('business_id').eq('id', user.id).single()
-  if (!profile?.business_id) redirect('/login')
+  const effective = await getEffectiveBusinessId()
+  if (!effective) redirect('/login')
 
   const { data: customers } = await supabaseAdmin
     .from('customers')
     .select('id, name, phone, email, document, notes')
-    .eq('business_id', profile.business_id)
+    .eq('business_id', effective.businessId)
     .order('name')
 
   return (

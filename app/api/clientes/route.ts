@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
-
-async function getBusinessId() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabase.from('profiles').select('business_id').eq('id', user.id).single()
-  return profile?.business_id as string | null ?? null
-}
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 export async function POST(req: NextRequest) {
-  const businessId = await getBusinessId()
+  const businessId = (await getEffectiveBusinessId())?.businessId ?? null
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { id, name, phone, email, document, notes } = await req.json()
@@ -32,7 +24,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const businessId = await getBusinessId()
+  const businessId = (await getEffectiveBusinessId())?.businessId ?? null
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { id } = await req.json()

@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { decryptJSON } from '@/lib/faturamento/crypto'
 import { nfseRequest } from '@/lib/faturamento/nfse/mtls-client'
 import type { NfseAmbiente } from '@/lib/faturamento/nfse/mtls-client'
+import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 // GET /api/faturamento/invoices/[id]/danfse — proxy: busca o PDF do DANFSe na
 // ADN usando o certificado do tenant (o navegador do tenant não tem o
 // certificado, então não pode chamar a ADN direto).
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('business_id').eq('id', user.id).single()
-  const businessId = profile?.business_id
+  const businessId = (await getEffectiveBusinessId())?.businessId
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { id } = await params
