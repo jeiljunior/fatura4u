@@ -23,7 +23,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isImpersonating = profile.super_admin && !!impersonatingId
 
   const effectiveBusinessId = isImpersonating ? impersonatingId! : profile.business_id
-  if (!effectiveBusinessId) redirect('/login')
+  if (!effectiveBusinessId) {
+    // Super admin "puro" (sem negócio próprio) — manda pro painel master em
+    // vez de travar num /dashboard que ele não tem como acessar.
+    redirect(profile.super_admin ? '/admin' : '/login')
+  }
 
   const { data: biz } = await supabaseAdmin
     .from('businesses')
