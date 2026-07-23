@@ -13,6 +13,7 @@ export default function LandingPage() {
           </a>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400 font-medium">
             <a href="#funcionalidades" className="hover:text-white transition">Funcionalidades</a>
+            <a href="#cobranca-automatica" className="hover:text-white transition">Cobrança automática</a>
             <a href="#como-funciona"   className="hover:text-white transition">Como funciona</a>
           </nav>
           <div className="flex items-center gap-3">
@@ -32,15 +33,15 @@ export default function LandingPage() {
         <HeroParticles />
         <div className="relative max-w-5xl mx-auto px-6 py-28 text-center">
           <span className="inline-block bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-8 tracking-wide uppercase">
-            Nota fiscal e cobrança online
+            Cobrança e nota fiscal automatizadas
           </span>
           <h1 className="text-5xl md:text-6xl font-black leading-tight mb-6">
-            Emita nota fiscal e cobre,<br />
-            <span className="text-blue-400">sem precisar de agenda.</span>
+            Cobre, receba e fature —<br />
+            <span className="text-blue-400">no automático.</span>
           </h1>
           <p className="text-slate-300 text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            O FATURA4U reúne emissão de NFS-e e cobrança PIX, boleto e cartão em um único painel —
-            pra quem só precisa faturar, sem sistema de agendamento nenhum.
+            O FATURA4U cobra por Pix, boleto, cartão ou link de pagamento, gera cobranças recorrentes
+            sozinho, avisa seu cliente antes de vencer — e ainda emite a nota fiscal. Tudo em um painel só.
           </p>
           <div className="flex flex-col items-center gap-3">
             <Link href="/cadastro"
@@ -52,8 +53,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center gap-10 mt-16 pt-10 border-t border-white/10">
             {[
               { v: 'NFS-e', l: 'Nacional' },
-              { v: 'PIX', l: 'Boleto e cartão' },
-              { v: '100%', l: 'Online' },
+              { v: 'Pix, boleto', l: 'e cartão' },
+              { v: 'Recorrente', l: 'automática' },
+              { v: 'Zero', l: 'esquecimento' },
             ].map(s => (
               <div key={s.l} className="text-center">
                 <p className="text-3xl font-black text-white">{s.v}</p>
@@ -75,11 +77,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: '🧾', title: 'Emissão de NFS-e Nacional', desc: 'Emita nota fiscal de serviço direto pra Prefeitura, com certificado digital A1 e assinatura automática.' },
-              { icon: '💲', title: 'Cobrança PIX, boleto e cartão', desc: 'Conecte sua conta Asaas e cobre seus clientes com PIX, boleto ou cartão, direto do painel.' },
-              { icon: '👥', title: 'Cadastro de clientes', desc: 'Organize os clientes que você atende, com CPF/CNPJ pra emissão de nota e cobrança.' },
+              { icon: '💲', title: 'Cobrança PIX, boleto e cartão', desc: 'Conecte sua conta Asaas ou Mercado Pago e cobre seus clientes com o meio de pagamento que preferirem.' },
+              { icon: '🔗', title: 'Link de pagamento único', desc: 'Cada cobrança gera um link — o cliente abre e escolhe como pagar, sem precisar entrar em painel nenhum.' },
+              { icon: '🔁', title: 'Cobrança recorrente automática', desc: 'Cadastre cliente, valor e dia de vencimento uma vez. O sistema gera a cobrança real todo mês, sozinho.' },
+              { icon: '📲', title: 'Régua de cobrança automática', desc: 'Lembrete por WhatsApp e e-mail antes, no dia e depois do vencimento — sem você precisar cobrar na mão.' },
+              { icon: '📉', title: 'Contas a pagar', desc: 'Controle suas próprias despesas — aluguel, fornecedores, impostos — no mesmo painel da cobrança.' },
+              { icon: '👥', title: 'Cadastro de clientes PF/PJ', desc: 'Organize os clientes que você atende, com CPF/CNPJ pra emissão de nota e cobrança.' },
               { icon: '🔒', title: 'Certificado digital protegido', desc: 'Seu certificado A1 fica cifrado — nunca é exposto, só usado no momento de emitir a nota.' },
-              { icon: '📊', title: 'Painel simples', desc: 'Acompanhe cobranças pendentes e notas emitidas em um painel limpo e direto ao ponto.' },
-              { icon: '⚡', title: 'Emissão automática', desc: 'Configure pra nota sair sozinha assim que uma cobrança for confirmada.' },
+              { icon: '📊', title: 'Painel simples e centralizado', desc: 'Acompanhe cobranças pendentes, recorrências, contas a pagar e notas emitidas em um só lugar.' },
             ].map(f => (
               <div key={f.title}
                 className="bg-slate-800 rounded-2xl p-6 border border-slate-700 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 transition group">
@@ -90,6 +95,42 @@ export default function LandingPage() {
                 <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── COBRANÇA AUTOMÁTICA (destaque) ──────────────────────── */}
+      <section id="cobranca-automatica" className="relative overflow-hidden py-24 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+        <HeroParticles />
+        <div className="relative z-10 max-w-6xl mx-auto px-6">
+          <div className="text-center mb-4">
+            <span className="inline-block bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest mb-4">
+              O diferencial do FATURA4U
+            </span>
+            <h2 className="text-4xl font-black text-white mb-4">Cobrança automática, de verdade.</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Cadastre uma vez. O sistema cobra, lembra e recebe por você, todo mês.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 hover:border-blue-500/50 transition">
+              <div className="text-4xl mb-4">🔁</div>
+              <h3 className="font-bold text-white text-xl mb-3">Cobrança recorrente</h3>
+              <ul className="space-y-2.5 text-slate-400 text-sm">
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> Cadastre cliente, valor e dia do vencimento uma única vez</li>
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> O sistema gera a cobrança real todo mês, sozinho</li>
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> Pause, retome ou cancele quando quiser</li>
+              </ul>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 hover:border-blue-500/50 transition">
+              <div className="text-4xl mb-4">📲</div>
+              <h3 className="font-bold text-white text-xl mb-3">Régua de cobrança</h3>
+              <ul className="space-y-2.5 text-slate-400 text-sm">
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> Lembrete automático por WhatsApp e e-mail</li>
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> Antes, no dia e depois do vencimento</li>
+                <li className="flex gap-2"><span className="text-blue-400">✓</span> Você nunca mais precisa cobrar na mão</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -108,7 +149,7 @@ export default function LandingPage() {
               {[
                 { n: '1', title: 'Crie sua conta', desc: 'Cadastro gratuito em menos de 1 minuto.' },
                 { n: '2', title: 'Configure seus dados', desc: 'Dados fiscais, certificado digital e gateway de pagamento.' },
-                { n: '3', title: 'Emita e cobre', desc: 'Cadastre um cliente, cobre e emita a nota fiscal correspondente.' },
+                { n: '3', title: 'Cobre e fature', desc: 'Cobrança avulsa ou recorrente, régua automática, e a nota sai sozinha.' },
               ].map(s => (
                 <div key={s.n} className="text-center relative">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 text-white text-3xl font-black rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-900/50">
@@ -126,8 +167,8 @@ export default function LandingPage() {
       {/* ── CTA FINAL ────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-blue-700 to-blue-900 py-20 text-center text-white">
         <div className="max-w-2xl mx-auto px-6">
-          <h2 className="text-4xl font-black mb-4">Pronto pra emitir sua primeira nota?</h2>
-          <p className="text-blue-100 text-lg mb-8">Crie sua conta agora e comece a faturar sem complicação.</p>
+          <h2 className="text-4xl font-black mb-4">Pronto pra parar de cobrar na mão?</h2>
+          <p className="text-blue-100 text-lg mb-8">Crie sua conta agora e deixe a cobrança rodar sozinha.</p>
           <Link href="/cadastro"
             className="inline-block bg-white text-blue-700 font-black text-lg px-10 py-4 rounded-2xl hover:bg-blue-50 transition shadow-xl">
             Criar conta grátis →
