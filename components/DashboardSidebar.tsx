@@ -7,6 +7,7 @@ const NAV = [
   { label: 'Clientes',     href: '/dashboard/clientes',     icon: '👥' },
   { label: 'Cobranças',    href: '/dashboard/cobrancas',    icon: '💲' },
   { label: 'Notas Fiscais', href: '/dashboard/notas',       icon: '🧾' },
+  { label: 'Contas a pagar', href: '/dashboard/contas-a-pagar', icon: '📉' },
 ]
 
 export default function DashboardSidebar({
