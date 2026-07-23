@@ -8,11 +8,12 @@ export default async function ConfiguracoesPage() {
   if (!effective) redirect('/login')
   const businessId = effective.businessId
 
-  const [{ data: business }, { data: config }, { data: certificado }, { data: gateways }] = await Promise.all([
+  const [{ data: business }, { data: config }, { data: certificado }, { data: gateways }, { data: whatsappConfig }] = await Promise.all([
     supabaseAdmin.from('businesses').select('*').eq('id', businessId).single(),
     supabaseAdmin.from('faturamento_config').select('*').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('certificados_digitais').select('valido_ate').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('gateway_credentials').select('provider, active').eq('business_id', businessId),
+    supabaseAdmin.from('whatsapp_config').select('active').eq('business_id', businessId).maybeSingle(),
   ])
 
   return (
@@ -26,6 +27,7 @@ export default async function ConfiguracoesPage() {
           config={config}
           certificado={certificado}
           gateways={gateways ?? []}
+          whatsappConectado={whatsappConfig?.active ?? false}
         />
       </div>
     </main>

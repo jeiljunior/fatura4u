@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
 import ImpersonateButton from './ImpersonateButton'
 import DeleteTenantButton from './DeleteTenantButton'
+import WhatsappConfigAdmin from './WhatsappConfigAdmin'
 
 const CHARGE_STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente', confirmada: 'Confirmada', recebida: 'Recebida', vencida: 'Vencida', cancelada: 'Cancelada',
@@ -57,6 +58,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
     { data: gateways },
     { data: recentCharges },
     { data: recentInvoices },
+    { data: whatsappConfig },
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('id, full_name, role, created_at').eq('business_id', id).order('created_at'),
     supabaseAdmin.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', id),
@@ -67,6 +69,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
     supabaseAdmin.from('gateway_credentials').select('provider, active').eq('business_id', id),
     supabaseAdmin.from('charges').select('id, valor_cents, billing_type, status, created_at, customers(name)').eq('business_id', id).order('created_at', { ascending: false }).limit(10),
     supabaseAdmin.from('invoices').select('id, valor_servicos, status, created_at, customers(name)').eq('business_id', id).order('created_at', { ascending: false }).limit(10),
+    supabaseAdmin.from('whatsapp_config').select('instance, token, phone, active').eq('business_id', id).maybeSingle(),
   ])
 
   // Email de login não fica em `profiles` (vive em auth.users) — busca separada por usuário.
@@ -162,6 +165,13 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                 <Row label="Gateway conectado" value={gateways && gateways.length > 0 ? gateways.map(g => g.provider).join(', ') : 'Nenhum'} />
               </dl>
             </div>
+          </div>
+
+          {/* WhatsApp (régua de cobrança) */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 className="font-bold text-slate-900 mb-1">📱 WhatsApp (régua de cobrança)</h2>
+            <p className="text-slate-400 text-xs mb-4">Instância Z-API provisionada manualmente — não é self-service pro tenant</p>
+            <WhatsappConfigAdmin businessId={id} initial={whatsappConfig ?? null} />
           </div>
 
           {/* Métricas de uso */}

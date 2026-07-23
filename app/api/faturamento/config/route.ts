@@ -49,6 +49,8 @@ export async function PUT(req: NextRequest) {
     serie_dps: body.serie_dps ?? '1',
     codigo_nbs: body.codigo_nbs ?? null,
     emissao_automatica: body.emissao_automatica ?? false,
+    regua_whatsapp_ativa: body.regua_whatsapp_ativa ?? true,
+    regua_email_ativa: body.regua_email_ativa ?? true,
     active: body.active ?? true,
   }
 

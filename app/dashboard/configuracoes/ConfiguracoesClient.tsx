@@ -27,18 +27,21 @@ type Config = {
   serie_dps: string
   codigo_nbs: string | null
   emissao_automatica: boolean
+  regua_whatsapp_ativa: boolean
+  regua_email_ativa: boolean
 } | null
 
 type Certificado = { valido_ate: string | null } | null
 type Gateway = { provider: string; active: boolean }
 
 export default function ConfiguracoesClient({
-  business, config, certificado, gateways,
+  business, config, certificado, gateways, whatsappConectado,
 }: {
   business: Business | null
   config: Config
   certificado: Certificado
   gateways: Gateway[]
+  whatsappConectado: boolean
 }) {
   const router = useRouter()
 
@@ -75,6 +78,8 @@ export default function ConfiguracoesClient({
     serie_dps: config?.serie_dps ?? '1',
     codigo_nbs: config?.codigo_nbs ?? '',
     emissao_automatica: config?.emissao_automatica ?? false,
+    regua_whatsapp_ativa: config?.regua_whatsapp_ativa ?? true,
+    regua_email_ativa: config?.regua_email_ativa ?? true,
   })
   const [savingCfg, setSavingCfg] = useState(false)
 
@@ -229,6 +234,33 @@ export default function ConfiguracoesClient({
             {savingGw ? 'Salvando...' : asaasConnected ? 'Reconectar' : 'Conectar'}
           </button>
         </div>
+      </section>
+
+      {/* Régua de cobrança */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-6">
+        <h2 className="font-bold text-slate-900 mb-1">Lembretes automáticos</h2>
+        <p className="text-slate-400 text-sm mb-4">
+          Avisa o cliente 3 dias antes, no dia e depois do vencimento, sem você precisar cobrar manualmente.
+        </p>
+        <p className="text-xs mb-4">
+          WhatsApp: {whatsappConectado
+            ? <span className="text-emerald-600 font-semibold">✓ conectado</span>
+            : <span className="text-slate-400">não conectado — fale com o suporte pra habilitar</span>}
+        </p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" checked={cfg.regua_whatsapp_ativa} onChange={e => setCfg({ ...cfg, regua_whatsapp_ativa: e.target.checked })} />
+            Lembrete por WhatsApp
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" checked={cfg.regua_email_ativa} onChange={e => setCfg({ ...cfg, regua_email_ativa: e.target.checked })} />
+            Lembrete por e-mail
+          </label>
+        </div>
+        <button onClick={saveCfg} disabled={savingCfg}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          {savingCfg ? 'Salvando...' : 'Salvar preferências de lembrete'}
+        </button>
       </section>
     </div>
   )
