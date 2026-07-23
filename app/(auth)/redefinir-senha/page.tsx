@@ -21,13 +21,38 @@ export default function RedefinirSenhaPage() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  // O link do e-mail traz um token na própria URL — o supabase-js já detecta
-  // e estabelece a sessão de recuperação sozinho (detectSessionInUrl, ligado
-  // por padrão no client de browser). Só precisamos esperar esse evento antes
-  // de mostrar o formulário, e tratar o caso de link expirado/inválido.
   useEffect(() => {
     const supabase = createClient()
 
+    // O createBrowserClient do @supabase/ssr força flowType "pkce", que só
+    // reconhece sessão vinda de "?code=" na URL — mas o link de e-mail de
+    // recuperação de senha do Supabase ainda usa o formato antigo, com os
+    // tokens no FRAGMENTO da URL (#access_token=...&type=recovery). Isso faz
+    // o detectSessionInUrl automático nunca disparar (bug real encontrado
+    // testando o fluxo de ponta a ponta: o link chegava válido, mas a tela
+    // sempre caía em "link inválido"). Por isso extraímos os tokens do hash
+    // na mão e chamamos setSession() direto, em vez de confiar só no evento
+    // automático do client.
+    async function tentarSessaoDoHash() {
+      const params = new URLSearchParams(window.location.hash.slice(1))
+      if (params.get('type') !== 'recovery') return false
+
+      const access_token = params.get('access_token')
+      const refresh_token = params.get('refresh_token')
+      if (!access_token || !refresh_token) return false
+
+      const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+      if (error) return false
+
+      // Limpa o hash da URL pra não deixar o token exposto no histórico do navegador
+      window.history.replaceState(null, '', window.location.pathname)
+      return true
+    }
+
+    tentarSessaoDoHash().then(ok => { if (ok) setReady(true) })
+
+    // Mantido como reforço — cobre o caso de a Supabase um dia passar a usar
+    // o fluxo PKCE de verdade (?code=), que o client já sabe processar sozinho.
     // Importante: só o evento PASSWORD_RECOVERY confirma que a sessão veio de
     // um link de redefinição de verdade. Checar "existe uma sessão?" de forma
     // genérica é errado — se o usuário já estiver logado normalmente (sessão
