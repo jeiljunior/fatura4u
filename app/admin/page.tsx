@@ -45,7 +45,7 @@ export default async function AdminPage() {
       <aside className="w-64 bg-slate-900 flex flex-col fixed top-0 left-0 h-full z-10">
         <div className="px-6 py-6 border-b border-slate-700/50">
           <span className="text-white font-black text-xl tracking-tight">
-            FATURA<span className="text-blue-400">4U</span>
+            FATUR<span className="text-blue-400">4U</span>
           </span>
           <span className="mt-2 inline-block text-xs font-bold bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full">
             SUPER ADMIN
@@ -75,7 +75,7 @@ export default async function AdminPage() {
 
         <div className="bg-white border-b border-slate-200 px-8 py-5">
           <h1 className="text-xl font-bold text-slate-900">Painel Master</h1>
-          <p className="text-slate-400 text-sm mt-0.5">Gestão de todos os tenants do FATURA4U</p>
+          <p className="text-slate-400 text-sm mt-0.5">Gestão de todos os tenants do FATUR4U</p>
         </div>
 
         <div className="px-8 py-8">

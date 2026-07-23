@@ -10,7 +10,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <a href="#" className="font-black text-xl tracking-tight select-none">
-            FATURA<span className="text-blue-400">4U</span>
+            FATUR<span className="text-blue-400">4U</span>
           </a>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400 font-medium">
             <a href="#funcionalidades" className="hover:text-white transition">Funcionalidades</a>
@@ -41,7 +41,7 @@ export default function LandingPage() {
             <span className="text-blue-400">no automático.</span>
           </h1>
           <p className="text-slate-300 text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            O FATURA4U cobra por Pix, boleto, cartão ou link de pagamento, gera cobranças recorrentes
+            O FATUR4U cobra por Pix, boleto, cartão ou link de pagamento, gera cobranças recorrentes
             sozinho, avisa seu cliente antes de vencer — e ainda emite a nota fiscal. Tudo em um painel só.
           </p>
           <div className="flex flex-col items-center gap-3">
@@ -97,7 +97,7 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-6xl mx-auto px-6">
           <div className="text-center mb-4">
             <span className="inline-block bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest mb-4">
-              O diferencial do FATURA4U
+              O diferencial do FATUR4U
             </span>
             <h2 className="text-4xl font-black text-white mb-4">Cobrança automática, de verdade.</h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
@@ -172,9 +172,9 @@ export default function LandingPage() {
       <footer className="bg-slate-950 text-slate-400 py-10 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-black text-lg tracking-tight text-white">
-            FATURA<span className="text-blue-400">4U</span>
+            FATUR<span className="text-blue-400">4U</span>
           </span>
-          <p className="text-sm">© {new Date().getFullYear()} FATURA4U. Todos os direitos reservados.</p>
+          <p className="text-sm">© {new Date().getFullYear()} FATUR4U. Todos os direitos reservados.</p>
           <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 transition font-medium">
             Acessar painel →
           </Link>

@@ -1,7 +1,7 @@
 // Paleta da identidade visual "Órbita Premium", mesma usada no AGEND4U —
 // mantendo o padrão visual entre os dois produtos.
 export const BRAND = {
-  bg: '#030A25',
+  bg: '#03071C',
   primary: '#0099FF',
   secondary: '#00D9FF',
   textSecondary: '#B0D4FF',

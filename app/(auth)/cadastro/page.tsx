@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { maskPhone, maskDocument, maskBirthDate } from '@/lib/masks'
 import HeroParticles from '@/components/HeroParticles'
 
-const BG_COSMIC = '#030A25'
+const BG_COSMIC = '#03071C'
 const PRIMARY = '#0099FF'
 const SECONDARY = '#00D9FF'
 const TEXT_SECONDARY = '#B0D4FF'
@@ -117,7 +117,7 @@ export default function CadastroPage() {
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-1.5px', color: '#fff' }}>
-            FATURA<span style={{ color: SECONDARY }}>4U</span>
+            FATUR<span style={{ color: SECONDARY }}>4U</span>
           </div>
           <p style={{ color: TEXT_SECONDARY, fontSize: 13, marginTop: 4 }}>Criar conta</p>
         </div>

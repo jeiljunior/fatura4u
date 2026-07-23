@@ -15,7 +15,7 @@ export const FUNCIONALIDADES: Funcionalidade[] = [
     icon: '🧾',
     title: 'Emissão de NFS-e Nacional',
     shortDesc: 'Emita nota fiscal de serviço direto pra Prefeitura, com certificado digital A1 e assinatura automática.',
-    longDesc: 'Emita nota fiscal de serviço (NFS-e Nacional) sem depender de portal da Prefeitura, planilha ou contador pra cada nota. O FATURA4U monta, assina e envia a DPS pra Sefin Nacional usando seu certificado digital A1.',
+    longDesc: 'Emita nota fiscal de serviço (NFS-e Nacional) sem depender de portal da Prefeitura, planilha ou contador pra cada nota. O FATUR4U monta, assina e envia a DPS pra Sefin Nacional usando seu certificado digital A1.',
     bullets: [
       'Assinatura digital automática com seu certificado A1 (cifrado, nunca exposto)',
       'Configuração fiscal única: regime tributário, código de serviço, alíquota de ISS',
@@ -41,7 +41,7 @@ export const FUNCIONALIDADES: Funcionalidade[] = [
     icon: '🔗',
     title: 'Link de pagamento único',
     shortDesc: 'Cada cobrança gera um link — o cliente abre e escolhe como pagar, sem precisar entrar em painel nenhum.',
-    longDesc: 'Toda cobrança criada no FATURA4U já sai com um link de pagamento pronto. Copie e cole no WhatsApp, e-mail ou onde for mais fácil — o cliente abre, vê o valor e paga, sem precisar de conta nem senha.',
+    longDesc: 'Toda cobrança criada no FATUR4U já sai com um link de pagamento pronto. Copie e cole no WhatsApp, e-mail ou onde for mais fácil — o cliente abre, vê o valor e paga, sem precisar de conta nem senha.',
     bullets: [
       'Um link por cobrança, gerado automaticamente',
       'Funciona pra cobrança avulsa e recorrente',

@@ -21,7 +21,7 @@ export default async function FuncionalidadePage({ params }: { params: Promise<{
       <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="font-black text-xl tracking-tight select-none">
-            FATURA<span className="text-blue-400">4U</span>
+            FATUR<span className="text-blue-400">4U</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400 font-medium">
             <Link href="/#funcionalidades" className="hover:text-white transition">Funcionalidades</Link>
@@ -112,9 +112,9 @@ export default async function FuncionalidadePage({ params }: { params: Promise<{
       <footer className="bg-slate-950 text-slate-400 py-10 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-black text-lg tracking-tight text-white">
-            FATURA<span className="text-blue-400">4U</span>
+            FATUR<span className="text-blue-400">4U</span>
           </span>
-          <p className="text-sm">© {new Date().getFullYear()} FATURA4U. Todos os direitos reservados.</p>
+          <p className="text-sm">© {new Date().getFullYear()} FATUR4U. Todos os direitos reservados.</p>
           <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 transition font-medium">
             Acessar painel →
           </Link>

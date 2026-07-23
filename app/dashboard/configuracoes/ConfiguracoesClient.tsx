@@ -205,7 +205,7 @@ export default function ConfiguracoesClient({
       <section className="bg-white border border-slate-200 rounded-2xl p-6">
         <h2 className="font-bold text-slate-900 mb-1">Personalização</h2>
         <p className="text-slate-400 text-sm mb-4">
-          Seu logo e sua cor aparecem no seu próprio painel — não muda o domínio nem a marca do FATURA4U.
+          Seu logo e sua cor aparecem no seu próprio painel — não muda o domínio nem a marca do FATUR4U.
         </p>
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex items-center gap-4">

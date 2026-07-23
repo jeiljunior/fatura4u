@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import HeroParticles from '@/components/HeroParticles'
 
-const BG_COSMIC = '#030A25'
+const BG_COSMIC = '#03071C'
 const PRIMARY = '#0099FF'
 const SECONDARY = '#00D9FF'
 const TEXT_SECONDARY = '#B0D4FF'
@@ -79,7 +79,7 @@ export default function RedefinirSenhaPage() {
         padding: '48px 44px',
       }}>
         <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-1px', color: '#fff', marginBottom: 24, textAlign: 'center' }}>
-          FATURA<span style={{ color: SECONDARY }}>4U</span>
+          FATUR<span style={{ color: SECONDARY }}>4U</span>
         </div>
 
         {done ? (

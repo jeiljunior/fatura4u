@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import HeroParticles from '@/components/HeroParticles'
 
-const BG_COSMIC = '#030A25'
+const BG_COSMIC = '#03071C'
 const PRIMARY = '#0099FF'
 const SECONDARY = '#00D9FF'
 const TEXT_SECONDARY = '#B0D4FF'
@@ -83,7 +83,7 @@ export default function LoginPage() {
         }}>
           <div style={{ maxWidth: 720, width: '100%' }}>
             <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-1.5px', color: '#fff', marginBottom: 32 }}>
-              FATURA<span style={{ color: SECONDARY }}>4U</span>
+              FATUR<span style={{ color: SECONDARY }}>4U</span>
             </div>
 
             <p style={{

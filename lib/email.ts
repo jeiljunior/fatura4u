@@ -15,7 +15,7 @@ export async function sendReminderEmail(to: string, subject: string, html: strin
 
   try {
     const { error } = await resend.emails.send({
-      from: 'Fatura4U <cobranca@fatura4u.com.br>',
+      from: 'FATUR4U <cobranca@fatura4u.com.br>',
       to,
       subject,
       html,
