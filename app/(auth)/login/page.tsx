@@ -82,9 +82,7 @@ export default function LoginPage() {
           padding: '60px 4vw 60px 6vw',
         }}>
           <div style={{ maxWidth: 720, width: '100%' }}>
-            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-1.5px', color: '#fff', marginBottom: 32 }}>
-              FATUR<span style={{ color: SECONDARY }}>4U</span>
-            </div>
+            <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 44, width: 'auto', marginBottom: 32 }} />
 
             <p style={{
               color: SECONDARY, fontSize: 13, fontWeight: 700, letterSpacing: '2px',

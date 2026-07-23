@@ -44,9 +44,7 @@ export default function EsqueciSenhaPage() {
         backdropFilter: 'blur(16px)',
         padding: '48px 44px',
       }}>
-        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-1px', color: '#fff', marginBottom: 24, textAlign: 'center' }}>
-          FATUR<span style={{ color: SECONDARY }}>4U</span>
-        </div>
+        <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 28, width: 'auto', marginBottom: 24, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
 
         {sent ? (
           <>

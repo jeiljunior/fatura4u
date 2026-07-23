@@ -32,9 +32,7 @@ export default function DashboardSidebar({
           {logoUrl ? (
             <img src={logoUrl} alt={businessName} className="h-8 max-w-full object-contain" />
           ) : (
-            <span className="text-white font-black text-xl tracking-tight">
-              FATUR<span className="text-blue-400">4U</span>
-            </span>
+            <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" className="h-6 w-auto" />
           )}
         </div>
 

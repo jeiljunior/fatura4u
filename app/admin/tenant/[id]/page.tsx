@@ -86,9 +86,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 flex flex-col fixed top-0 left-0 h-full z-10">
         <div className="px-6 py-6 border-b border-slate-700/50">
-          <span className="text-white font-black text-xl tracking-tight">
-            FATUR<span className="text-blue-400">4U</span>
-          </span>
+          <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" className="h-6 w-auto" />
           <span className="mt-2 inline-block text-xs font-bold bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full">
             SUPER ADMIN
           </span>
