@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import HeroParticles from '@/components/HeroParticles'
+import { FUNCIONALIDADES } from '@/lib/funcionalidades'
 
 export default function LandingPage() {
   return (
@@ -75,25 +76,16 @@ export default function LandingPage() {
             <p className="text-slate-400 text-lg">Sem módulo de agenda, sem complicação.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: '🧾', title: 'Emissão de NFS-e Nacional', desc: 'Emita nota fiscal de serviço direto pra Prefeitura, com certificado digital A1 e assinatura automática.' },
-              { icon: '💲', title: 'Cobrança PIX, boleto e cartão', desc: 'Conecte sua conta Asaas ou Mercado Pago e cobre seus clientes com o meio de pagamento que preferirem.' },
-              { icon: '🔗', title: 'Link de pagamento único', desc: 'Cada cobrança gera um link — o cliente abre e escolhe como pagar, sem precisar entrar em painel nenhum.' },
-              { icon: '🔁', title: 'Cobrança recorrente automática', desc: 'Cadastre cliente, valor e dia de vencimento uma vez. O sistema gera a cobrança real todo mês, sozinho.' },
-              { icon: '📲', title: 'Régua de cobrança automática', desc: 'Lembrete por WhatsApp e e-mail antes, no dia e depois do vencimento — sem você precisar cobrar na mão.' },
-              { icon: '📉', title: 'Contas a pagar', desc: 'Controle suas próprias despesas — aluguel, fornecedores, impostos — no mesmo painel da cobrança.' },
-              { icon: '👥', title: 'Cadastro de clientes PF/PJ', desc: 'Organize os clientes que você atende, com CPF/CNPJ pra emissão de nota e cobrança.' },
-              { icon: '🔒', title: 'Certificado digital protegido', desc: 'Seu certificado A1 fica cifrado — nunca é exposto, só usado no momento de emitir a nota.' },
-              { icon: '📊', title: 'Painel simples e centralizado', desc: 'Acompanhe cobranças pendentes, recorrências, contas a pagar e notas emitidas em um só lugar.' },
-            ].map(f => (
-              <div key={f.title}
-                className="bg-slate-800 rounded-2xl p-6 border border-slate-700 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 transition group">
+            {FUNCIONALIDADES.map(f => (
+              <Link key={f.slug} href={`/funcionalidades/${f.slug}`}
+                className="bg-slate-800 rounded-2xl p-6 border border-slate-700 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 transition group block">
                 <div className="w-12 h-12 bg-blue-600/20 group-hover:bg-blue-600/30 rounded-2xl flex items-center justify-center text-2xl mb-4 transition">
                   {f.icon}
                 </div>
                 <h3 className="font-bold text-white text-base mb-2">{f.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+                <p className="text-slate-400 text-sm leading-relaxed">{f.shortDesc}</p>
+                <span className="inline-block text-blue-400 text-xs font-semibold mt-3 group-hover:text-blue-300">Saiba mais →</span>
+              </Link>
             ))}
           </div>
         </div>
