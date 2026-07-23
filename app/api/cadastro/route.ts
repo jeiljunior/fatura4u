@@ -7,11 +7,18 @@ const supabaseAdmin = createAdmin(
 )
 
 export async function POST(req: NextRequest) {
-  const { businessName, fullName, email, password } = await req.json()
+  const body = await req.json()
+  const {
+    email, password,
+    fullName, razaoSocial, docType, docNumber, birthDate, businessName, phone,
+    zip, street, number, complement, neighborhood, city, state,
+  } = body
 
-  if (!businessName || !fullName || !email || !password) {
+  if (!businessName || !email || !password || !docNumber) {
     return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 })
   }
+
+  const customerName = docType === 'cnpj' ? razaoSocial : fullName
 
   try {
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -28,13 +35,25 @@ export async function POST(req: NextRequest) {
     const { data: biz, error: bizError } = await supabaseAdmin.from('businesses').insert({
       name: businessName,
       slug,
+      document_type: docType,
+      document_number: docNumber?.replace(/\D/g, ''),
+      razao_social: docType === 'cnpj' ? razaoSocial : null,
+      birth_date: docType === 'cpf' && birthDate ? birthDate : null,
+      phone: phone || null,
+      address_zip: zip?.replace(/\D/g, '') || null,
+      address_street: street || null,
+      address_number: number || null,
+      address_complement: complement || null,
+      address_neighborhood: neighborhood || null,
+      address_city: city || null,
+      address_state: state || null,
     }).select().single()
 
     if (bizError) throw new Error(bizError.message)
 
     await supabaseAdmin.from('profiles').upsert({
       id: userId,
-      full_name: fullName,
+      full_name: customerName,
       role: 'owner',
       business_id: biz.id,
     })
