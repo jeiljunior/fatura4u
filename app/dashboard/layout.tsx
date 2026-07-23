@@ -31,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: biz } = await supabaseAdmin
     .from('businesses')
-    .select('name')
+    .select('name, logo_url, brand_color')
     .eq('id', effectiveBusinessId)
     .single()
 
@@ -41,6 +41,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardSidebar
         businessName={biz?.name ?? ''}
         userName={profile.full_name ?? ''}
+        logoUrl={biz?.logo_url}
+        brandColor={biz?.brand_color}
       >
         {children}
       </DashboardSidebar>

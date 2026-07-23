@@ -54,7 +54,7 @@ export default function NotasClient({ initialInvoices, customers }: { initialInv
   return (
     <div>
       <button onClick={() => setOpen(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4">
+        className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4">
         + Emitir nota
       </button>
 
@@ -114,7 +114,7 @@ export default function NotasClient({ initialInvoices, customers }: { initialInv
             {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             <div className="flex gap-3 mt-5">
               <button onClick={handleEmit} disabled={saving || !customerId || !valorServicos || !descricaoServico}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
                 {saving ? 'Emitindo...' : 'Emitir'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>

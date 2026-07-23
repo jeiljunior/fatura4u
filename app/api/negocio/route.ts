@@ -11,12 +11,14 @@ export async function PUT(req: NextRequest) {
     document_type, document_number, razao_social,
     address_zip, address_street, address_number, address_complement,
     address_neighborhood, address_city, address_state,
+    logo_url, brand_color,
   } = body
 
   const { error } = await supabaseAdmin.from('businesses').update({
     document_type, document_number, razao_social,
     address_zip, address_street, address_number, address_complement,
     address_neighborhood, address_city, address_state,
+    logo_url, brand_color,
   }).eq('id', businessId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

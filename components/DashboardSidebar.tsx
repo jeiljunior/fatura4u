@@ -13,21 +13,29 @@ const NAV = [
 export default function DashboardSidebar({
   businessName,
   userName,
+  logoUrl,
+  brandColor,
   children,
 }: {
   businessName: string
   userName: string
+  logoUrl?: string | null
+  brandColor?: string | null
   children?: React.ReactNode
 }) {
   const pathname = usePathname()
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50" style={{ '--brand-primary': brandColor || '#2563eb' } as React.CSSProperties}>
       <aside className="w-60 hidden md:flex flex-col fixed top-0 left-0 h-full bg-slate-900 z-20">
         <div className="px-4 py-5 border-b border-white/10">
-          <span className="text-white font-black text-xl tracking-tight">
-            FATURA<span className="text-blue-400">4U</span>
-          </span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={businessName} className="h-8 max-w-full object-contain" />
+          ) : (
+            <span className="text-white font-black text-xl tracking-tight">
+              FATURA<span className="text-blue-400">4U</span>
+            </span>
+          )}
         </div>
 
         <div className="px-4 py-4 border-b border-white/10">

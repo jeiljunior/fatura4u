@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 type Business = {
   id: string
@@ -15,6 +16,8 @@ type Business = {
   address_neighborhood: string | null
   address_city: string | null
   address_state: string | null
+  logo_url: string | null
+  brand_color: string | null
 }
 
 type Config = {
@@ -64,6 +67,41 @@ export default function ConfiguracoesClient({
     setSavingBiz(true)
     await fetch('/api/negocio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(biz) })
     setSavingBiz(false)
+    router.refresh()
+  }
+
+  // ── Personalização (white label: logo + cor) ───────────────────
+  const [logoUrl, setLogoUrl] = useState(business?.logo_url ?? '')
+  const [logoPreview, setLogoPreview] = useState(business?.logo_url ?? '')
+  const [brandColor, setBrandColor] = useState(business?.brand_color ?? '#2563eb')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [savingBrand, setSavingBrand] = useState(false)
+  const [brandError, setBrandError] = useState('')
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !business) return
+    if (file.size > 2 * 1024 * 1024) { setBrandError('Imagem muito grande. Máximo 2MB.'); return }
+    setUploadingLogo(true)
+    setBrandError('')
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `logo/${business.id}.${ext}`
+    const { error: upErr } = await supabase.storage.from('business-assets').upload(path, file, { upsert: true })
+    if (upErr) { setBrandError('Erro ao enviar: ' + upErr.message); setUploadingLogo(false); return }
+    const { data: urlData } = supabase.storage.from('business-assets').getPublicUrl(path)
+    setLogoUrl(urlData.publicUrl)
+    setLogoPreview(urlData.publicUrl + '?t=' + Date.now())
+    setUploadingLogo(false)
+  }
+
+  async function saveBrand() {
+    setSavingBrand(true)
+    await fetch('/api/negocio', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logo_url: logoUrl || null, brand_color: brandColor }),
+    })
+    setSavingBrand(false)
     router.refresh()
   }
 
@@ -158,8 +196,40 @@ export default function ConfiguracoesClient({
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
         </div>
         <button onClick={saveBiz} disabled={savingBiz}
-          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingBiz ? 'Salvando...' : 'Salvar dados do negócio'}
+        </button>
+      </section>
+
+      {/* Personalização (white label) */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-6">
+        <h2 className="font-bold text-slate-900 mb-1">Personalização</h2>
+        <p className="text-slate-400 text-sm mb-4">
+          Seu logo e sua cor aparecem no seu próprio painel — não muda o domínio nem a marca do FATURA4U.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-6 items-start">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+              {logoPreview
+                ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                : <span className="text-slate-300 text-xs">Sem logo</span>}
+            </div>
+            <div>
+              <input type="file" accept="image/*" onChange={handleLogoUpload}
+                className="text-sm" disabled={uploadingLogo} />
+              {uploadingLogo && <p className="text-slate-400 text-xs mt-1">Enviando...</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600 font-medium">Cor de destaque</label>
+            <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)}
+              className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer" />
+          </div>
+        </div>
+        {brandError && <p className="text-red-500 text-sm mt-2">{brandError}</p>}
+        <button onClick={saveBrand} disabled={savingBrand}
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          {savingBrand ? 'Salvando...' : 'Salvar personalização'}
         </button>
       </section>
 
@@ -196,7 +266,7 @@ export default function ConfiguracoesClient({
           Emitir nota automaticamente quando uma cobrança for confirmada
         </label>
         <button onClick={saveCfg} disabled={savingCfg}
-          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingCfg ? 'Salvando...' : 'Salvar configuração fiscal'}
         </button>
       </section>
@@ -213,7 +283,7 @@ export default function ConfiguracoesClient({
           <input type="password" placeholder="Senha do certificado" value={certSenha} onChange={e => setCertSenha(e.target.value)}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
           <button onClick={uploadCert} disabled={uploadingCert || !certFile || !certSenha}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
             {uploadingCert ? 'Enviando...' : 'Enviar certificado'}
           </button>
         </div>
@@ -230,7 +300,7 @@ export default function ConfiguracoesClient({
           <input type="password" placeholder="Chave de API do Asaas" value={asaasKey} onChange={e => setAsaasKey(e.target.value)}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex-1" />
           <button onClick={connectAsaas} disabled={savingGw || !asaasKey}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
             {savingGw ? 'Salvando...' : asaasConnected ? 'Reconectar' : 'Conectar'}
           </button>
         </div>
@@ -258,7 +328,7 @@ export default function ConfiguracoesClient({
           </label>
         </div>
         <button onClick={saveCfg} disabled={savingCfg}
-          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingCfg ? 'Salvando...' : 'Salvar preferências de lembrete'}
         </button>
       </section>

@@ -80,7 +80,7 @@ export default function RecorrentesClient({ initialRecorrentes, customers }: { i
           <p className="text-slate-400 text-sm">Cadastre uma vez, o sistema cobra automaticamente todo mês</p>
         </div>
         <button onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition">
+          className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition">
           + Nova recorrência
         </button>
       </div>
@@ -154,7 +154,7 @@ export default function RecorrentesClient({ initialRecorrentes, customers }: { i
             {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             <div className="flex gap-3 mt-5">
               <button onClick={handleCreate} disabled={saving || !customerId || !valueReais || !dueDay}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
                 {saving ? 'Criando...' : 'Criar recorrência'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>

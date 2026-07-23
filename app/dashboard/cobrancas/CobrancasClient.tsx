@@ -76,7 +76,7 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   return (
     <div>
       <button onClick={() => setOpen(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4">
+        className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4">
         + Nova cobrança
       </button>
 
@@ -145,7 +145,7 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
             {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             <div className="flex gap-3 mt-5">
               <button onClick={handleCreate} disabled={saving || !customerId || !valueReais}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
                 {saving ? 'Criando...' : 'Criar cobrança'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>

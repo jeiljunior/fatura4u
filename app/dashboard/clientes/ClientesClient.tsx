@@ -45,7 +45,7 @@ export default function ClientesClient({ initialCustomers }: { initialCustomers:
     <div>
       <button
         onClick={() => setForm(EMPTY)}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4"
+        className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition mb-4"
       >
         + Novo cliente
       </button>
@@ -99,7 +99,7 @@ export default function ClientesClient({ initialCustomers }: { initialCustomers:
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={handleSave} disabled={saving || !form.name}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
                 {saving ? 'Salvando...' : 'Salvar'}
               </button>
               <button onClick={() => setForm(null)}
