@@ -10,6 +10,7 @@ type Charge = {
   due_date: string | null
   pix_qr_code: string | null
   boleto_url: string | null
+  payment_link: string | null
   customers: { name: string } | { name: string }[] | null
 }
 
@@ -42,6 +43,13 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [copiedId, setCopiedId] = useState('')
+
+  async function handleCopyLink(id: string, link: string) {
+    await navigator.clipboard.writeText(link)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(''), 2000)
+  }
 
   async function handleCreate() {
     setSaving(true)
@@ -81,11 +89,12 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
               <th className="px-4 py-3 font-semibold">Tipo</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Vencimento</th>
+              <th className="px-4 py-3 font-semibold">Link</th>
             </tr>
           </thead>
           <tbody>
             {initialCharges.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Nenhuma cobrança ainda</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhuma cobrança ainda</td></tr>
             )}
             {initialCharges.map(c => (
               <tr key={c.id} className="border-t border-slate-100">
@@ -96,6 +105,14 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${STATUS_COLOR[c.status]}`}>{STATUS_LABEL[c.status]}</span>
                 </td>
                 <td className="px-4 py-3 text-slate-500">{c.due_date ?? '—'}</td>
+                <td className="px-4 py-3">
+                  {c.payment_link ? (
+                    <button onClick={() => handleCopyLink(c.id, c.payment_link!)}
+                      className="text-blue-600 hover:text-blue-700 text-xs font-semibold">
+                      {copiedId === c.id ? 'Copiado!' : 'Copiar link'}
+                    </button>
+                  ) : '—'}
+                </td>
               </tr>
             ))}
           </tbody>

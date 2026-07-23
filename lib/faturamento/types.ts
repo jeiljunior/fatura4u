@@ -61,6 +61,7 @@ export type Charge = {
   pix_qr_code: string | null
   pix_payload: string | null
   boleto_url: string | null
+  payment_link: string | null
   created_at: string
   updated_at: string
 }
@@ -122,4 +123,5 @@ export type GatewayChargeResult = {
   pixQrCode?: string
   pixPayload?: string
   boletoUrl?: string
+  paymentLink?: string
 }

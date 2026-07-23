@@ -79,6 +79,7 @@ export function createAsaasGateway(apiKey: string): PaymentGateway {
       const result: GatewayChargeResult = {
         id: data.id as string,
         status: mapStatus(data.status as string),
+        paymentLink: data.invoiceUrl as string | undefined,
       }
 
       if (params.billingType === 'pix') {

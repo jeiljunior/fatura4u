@@ -100,15 +100,17 @@ export function createMercadoPagoGateway(accessToken: string): PaymentGateway {
         status: mapStatus(data.status as string),
       }
 
-      const pointOfInteraction = data.point_of_interaction as { transaction_data?: { qr_code?: string; qr_code_base64?: string } } | undefined
+      const pointOfInteraction = data.point_of_interaction as { transaction_data?: { qr_code?: string; qr_code_base64?: string; ticket_url?: string } } | undefined
       if (params.billingType === 'pix' && pointOfInteraction?.transaction_data) {
         result.pixPayload = pointOfInteraction.transaction_data.qr_code
         result.pixQrCode = pointOfInteraction.transaction_data.qr_code_base64
+        result.paymentLink = pointOfInteraction.transaction_data.ticket_url
       }
 
       if (params.billingType === 'boleto') {
         const td = data.transaction_details as { external_resource_url?: string } | undefined
         result.boletoUrl = td?.external_resource_url
+        result.paymentLink = td?.external_resource_url
       }
 
       return result

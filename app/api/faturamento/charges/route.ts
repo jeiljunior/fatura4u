@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
         pix_qr_code: result.pixQrCode ?? null,
         pix_payload: result.pixPayload ?? null,
         boleto_url: result.boletoUrl ?? null,
+        payment_link: result.paymentLink ?? null,
       })
       .select()
       .single()
