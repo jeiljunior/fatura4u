@@ -44,7 +44,7 @@ export default async function AdminPage() {
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 flex flex-col fixed top-0 left-0 h-full z-10">
         <div className="px-6 py-6 border-b border-slate-700/50">
-          <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" className="h-6 w-auto" />
+          <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" className="w-[104px] max-w-full h-auto" />
           <span className="mt-2 inline-block text-xs font-bold bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full">
             SUPER ADMIN
           </span>

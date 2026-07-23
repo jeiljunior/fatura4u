@@ -116,7 +116,7 @@ export default function CadastroPage() {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 520 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 36, width: 'auto', margin: '0 auto' }} />
+          <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ width: 155, maxWidth: '100%', height: 'auto', margin: '0 auto' }} />
           <p style={{ color: TEXT_SECONDARY, fontSize: 13, marginTop: 4 }}>Criar conta</p>
         </div>
 

@@ -44,7 +44,7 @@ export default function EsqueciSenhaPage() {
         backdropFilter: 'blur(16px)',
         padding: '48px 44px',
       }}>
-        <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 28, width: 'auto', marginBottom: 24, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
+        <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ width: 121, maxWidth: '100%', height: 'auto', marginBottom: 24, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
 
         {sent ? (
           <>
