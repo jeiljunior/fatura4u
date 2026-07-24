@@ -348,7 +348,7 @@ export default function ConfiguracoesClient({
       </CollapsibleSection>
 
       {/* Gateway de pagamento */}
-      <CollapsibleSection title="Gateway de pagamento (Asaas)"
+      <CollapsibleSection title="Gateway de Pagamentos"
         subtitle={asaasConnected ? '✓ Conectado' : 'Não conectado — cole a chave de API da sua conta Asaas'}>
         <div className="flex flex-col sm:flex-row gap-3">
           <input type="password" placeholder="Chave de API do Asaas" value={asaasKey} onChange={e => setAsaasKey(e.target.value)}
