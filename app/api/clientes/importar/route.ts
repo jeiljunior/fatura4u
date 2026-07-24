@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
+import { maskCEP } from '@/lib/masks'
 
 // POST /api/clientes/importar
-// Body: FormData com campo "file" (.xlsx, .xls ou .csv)
-// Colunas esperadas (case-insensitive): nome/name, telefone/phone/celular/whatsapp,
-// email, documento/cpf/cnpj/document, observacoes/notes
+// Body: FormData com campo "file" (.xlsx, .xls ou .csv) — ver modelo em
+// public/templates/clientes-modelo.xlsx (gerado por scripts/gerar-modelo-clientes.js)
 export async function POST(req: NextRequest) {
   const businessId = (await getEffectiveBusinessId())?.businessId ?? null
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
@@ -44,20 +44,51 @@ export async function POST(req: NextRequest) {
     return key ? String(row[key] ?? '').trim() : ''
   }
 
+  // Converte DD/MM/AAAA ou DD-MM-AAAA para ISO YYYY-MM-DD
+  function parseDate(raw: string): string | null {
+    const match = raw.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/)
+    if (!match) return null
+    const [, d, m, y] = match
+    const year = y.length === 2 ? `20${y}` : y
+    return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+
   const customers = rows
-    .map(row => ({
-      business_id: businessId,
-      name: findCol(row, ['nome', 'name', 'cliente']),
-      phone: findCol(row, ['telefone', 'phone', 'celular', 'whatsapp', 'fone', 'tel']).replace(/\D/g, ''),
-      email: findCol(row, ['email', 'e-mail', 'mail']),
-      document: findCol(row, ['documento', 'cpf', 'cnpj', 'document']).replace(/\D/g, ''),
-      notes: findCol(row, ['observa', 'notes', 'obs', 'anotac']),
-    }))
+    .map(row => {
+      const document = findCol(row, ['documento', 'cpf', 'cnpj', 'document']).replace(/\D/g, '')
+      const tipoRaw = findCol(row, ['tipo']).toLowerCase()
+      const tipo_pessoa = tipoRaw.startsWith('j') || tipoRaw === 'pj'
+        ? 'pj'
+        : tipoRaw.startsWith('f') || tipoRaw === 'pf'
+        ? 'pf'
+        : document.length === 14 ? 'pj' : 'pf'
+      const cep = findCol(row, ['cep']).replace(/\D/g, '')
+
+      return {
+        business_id: businessId,
+        tipo_pessoa,
+        name: findCol(row, ['razao', 'nome', 'name', 'cliente']),
+        phone: findCol(row, ['telefone', 'phone', 'celular', 'whatsapp', 'fone', 'tel']).replace(/\D/g, ''),
+        email: findCol(row, ['email', 'e-mail', 'mail']),
+        document,
+        notes: findCol(row, ['observa', 'notes', 'obs', 'anotac']),
+        birth_date: parseDate(findCol(row, ['nascimento', 'birth', 'data_nasc', 'dt_nasc'])),
+        inscricao_estadual: findCol(row, ['inscricao estadual', 'inscricaoestadual', 'ie']),
+        inscricao_municipal: findCol(row, ['inscricao municipal', 'inscricaomunicipal', 'im']),
+        address_zip: cep ? maskCEP(cep) : '',
+        address_street: findCol(row, ['rua', 'logradouro', 'street', 'endereco']),
+        address_number: findCol(row, ['numero', 'number']),
+        address_complement: findCol(row, ['complemento', 'complement']),
+        address_neighborhood: findCol(row, ['bairro', 'neighborhood']),
+        address_city: findCol(row, ['cidade', 'municipio', 'city']),
+        address_state: findCol(row, ['uf', 'estado', 'state']).toUpperCase().slice(0, 2),
+      }
+    })
     .filter(c => c.name && (c.phone || c.document || c.email))
 
   if (customers.length === 0) {
     return NextResponse.json({
-      error: 'Nenhum cliente válido encontrado. A planilha precisa de uma coluna "Nome" e ao menos telefone, e-mail ou documento.'
+      error: 'Nenhum cliente válido encontrado. A planilha precisa de uma coluna "Nome/Razão social" e ao menos telefone, e-mail ou documento.'
     }, { status: 400 })
   }
 
@@ -82,30 +113,31 @@ export async function POST(req: NextRequest) {
       existingId = data?.id ?? null
     }
 
+    const fields = {
+      name: c.name,
+      tipo_pessoa: c.tipo_pessoa,
+      phone: c.phone || undefined,
+      email: c.email || undefined,
+      document: c.document || undefined,
+      notes: c.notes || undefined,
+      birth_date: c.birth_date || undefined,
+      inscricao_estadual: c.inscricao_estadual || undefined,
+      inscricao_municipal: c.inscricao_municipal || undefined,
+      address_zip: c.address_zip || undefined,
+      address_street: c.address_street || undefined,
+      address_number: c.address_number || undefined,
+      address_complement: c.address_complement || undefined,
+      address_neighborhood: c.address_neighborhood || undefined,
+      address_city: c.address_city || undefined,
+      address_state: c.address_state || undefined,
+    }
+
     if (existingId) {
-      const { error } = await supabaseAdmin
-        .from('customers')
-        .update({
-          name: c.name,
-          phone: c.phone || undefined,
-          email: c.email || undefined,
-          document: c.document || undefined,
-          notes: c.notes || undefined,
-        })
-        .eq('id', existingId)
+      const { error } = await supabaseAdmin.from('customers').update(fields).eq('id', existingId)
       if (error) errors.push(`${c.name}: ${error.message}`)
       else updated++
     } else {
-      const { error } = await supabaseAdmin
-        .from('customers')
-        .insert({
-          business_id: businessId,
-          name: c.name,
-          phone: c.phone || null,
-          email: c.email || null,
-          document: c.document || null,
-          notes: c.notes || null,
-        })
+      const { error } = await supabaseAdmin.from('customers').insert({ business_id: businessId, ...fields })
       if (error) errors.push(`${c.name}: ${error.message}`)
       else inserted++
     }

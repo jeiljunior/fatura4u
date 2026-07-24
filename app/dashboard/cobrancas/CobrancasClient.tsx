@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ClienteFormModal from '@/components/ClienteFormModal'
 
 type Charge = {
   id: string
@@ -37,6 +38,10 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [customerId, setCustomerId] = useState('')
+  const [customerList, setCustomerList] = useState(customers)
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [showCustomerPicker, setShowCustomerPicker] = useState(false)
+  const [showNovoCliente, setShowNovoCliente] = useState(false)
   const [valueReais, setValueReais] = useState('')
   const [billingType, setBillingType] = useState('pix')
   const [dueDate, setDueDate] = useState('')
@@ -44,6 +49,14 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState('')
+
+  const selectedCustomer = customerList.find(c => c.id === customerId)
+  const filteredCustomers = customerSearch
+    ? customerList.filter(c =>
+        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        (c.document ?? '').includes(customerSearch.replace(/\D/g, ''))
+      )
+    : customerList
 
   async function handleCopyLink(id: string, link: string) {
     await navigator.clipboard.writeText(link)
@@ -69,7 +82,7 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao criar cobrança'); return }
     setOpen(false)
-    setCustomerId(''); setValueReais(''); setDueDate(''); setDescription('')
+    setCustomerId(''); setCustomerSearch(''); setValueReais(''); setDueDate(''); setDescription('')
     router.refresh()
   }
 
@@ -124,11 +137,46 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h2 className="font-bold text-slate-900 mb-4">Nova cobrança</h2>
             <div className="space-y-3">
-              <select value={customerId} onChange={e => setCustomerId(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
-                <option value="">Selecione o cliente</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Faturar para</label>
+                {selectedCustomer ? (
+                  <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
+                    <span className="font-medium text-slate-800">{selectedCustomer.name}</span>
+                    <button type="button" onClick={() => { setCustomerId(''); setCustomerSearch('') }}
+                      className="text-xs text-slate-400 hover:text-slate-600">trocar</button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      placeholder="Buscar cliente por nome ou documento..."
+                      value={customerSearch}
+                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerPicker(true) }}
+                      onFocus={() => setShowCustomerPicker(true)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                    />
+                    {showCustomerPicker && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {filteredCustomers.length === 0 && (
+                          <p className="px-3 py-2 text-sm text-slate-400">Nenhum cliente encontrado</p>
+                        )}
+                        {filteredCustomers.map(c => (
+                          <button key={c.id} type="button"
+                            onClick={() => { setCustomerId(c.id); setShowCustomerPicker(false) }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                            <span className="font-medium text-slate-800">{c.name}</span>
+                            {c.document && <span className="text-slate-400 ml-2 text-xs">{c.document}</span>}
+                          </button>
+                        ))}
+                        <button type="button"
+                          onClick={() => { setShowCustomerPicker(false); setShowNovoCliente(true) }}
+                          className="w-full text-left px-3 py-2 text-sm text-[var(--brand-primary)] font-semibold hover:bg-blue-50">
+                          + Faturar para um terceiro (novo cliente)
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
               <input placeholder="Valor (R$)" value={valueReais} onChange={e => setValueReais(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
               <select value={billingType} onChange={e => setBillingType(e.target.value)}
@@ -152,6 +200,17 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
             </div>
           </div>
         </div>
+      )}
+
+      {showNovoCliente && (
+        <ClienteFormModal
+          onClose={() => setShowNovoCliente(false)}
+          onSaved={c => {
+            setCustomerList(list => [...list, { id: c.id, name: c.name, document: c.document }])
+            setCustomerId(c.id)
+            setShowNovoCliente(false)
+          }}
+        />
       )}
     </div>
   )

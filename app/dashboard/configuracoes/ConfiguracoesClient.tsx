@@ -341,10 +341,15 @@ export default function ConfiguracoesClient({
       {/* Importar clientes */}
       <section className="bg-white border border-slate-200 rounded-2xl p-6">
         <h2 className="font-bold text-slate-900 mb-1">Importar clientes</h2>
-        <p className="text-slate-400 text-sm mb-4">
-          Planilha .xlsx, .xls ou .csv com colunas Nome, Telefone, E-mail, Documento e Observações
-          (nomes flexíveis). Clientes existentes são atualizados por documento ou telefone; os demais são criados.
+        <p className="text-slate-400 text-sm mb-1">
+          Planilha .xlsx, .xls ou .csv com dados de pessoa física ou jurídica (nome/razão social, CPF/CNPJ,
+          endereço, etc. — nomes de coluna flexíveis). Clientes existentes são atualizados por documento ou
+          telefone; os demais são criados.
         </p>
+        <a href="/templates/clientes-modelo.xlsx" download
+          className="inline-block text-sm text-[var(--brand-primary)] font-semibold hover:underline mb-4">
+          📥 Baixar modelo em Excel
+        </a>
         <div className="flex flex-col sm:flex-row gap-3">
           <input type="file" accept=".xlsx,.xls,.csv" onChange={e => setImportFile(e.target.files?.[0] ?? null)}
             className="text-sm" disabled={importing} />
