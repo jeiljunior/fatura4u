@@ -52,7 +52,13 @@ export default function ClienteFormModal({
   onSaved: (c: { id: string; name: string; document: string | null }) => void
 }) {
   const [form, setForm] = useState<Cliente>(
-    initial ? { ...initial, birth_date: isoToBr(initial.birth_date) } : EMPTY
+    initial ? {
+      ...initial,
+      birth_date: isoToBr(initial.birth_date),
+      document: initial.document ? (initial.tipo_pessoa === 'pj' ? maskCNPJ(initial.document) : maskCPF(initial.document)) : '',
+      phone: initial.phone ? maskPhone(initial.phone) : '',
+      address_zip: initial.address_zip ? maskCEP(initial.address_zip) : '',
+    } : EMPTY
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
