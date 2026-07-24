@@ -15,8 +15,11 @@ export async function PUT(req: NextRequest) {
   } = body
 
   const { error } = await supabaseAdmin.from('businesses').update({
-    document_type, document_number, razao_social,
-    address_zip, address_street, address_number, address_complement,
+    document_type,
+    document_number: document_number ? String(document_number).replace(/\D/g, '') : document_number,
+    razao_social,
+    address_zip: address_zip ? String(address_zip).replace(/\D/g, '') : address_zip,
+    address_street, address_number, address_complement,
     address_neighborhood, address_city, address_state,
     logo_url, brand_color,
   }).eq('id', businessId)

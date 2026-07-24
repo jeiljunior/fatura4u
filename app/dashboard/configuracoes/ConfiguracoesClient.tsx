@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ServicosSection, { Servico } from '@/components/ServicosSection'
 import CollapsibleSection from '@/components/CollapsibleSection'
+import { maskCPF, maskCNPJ, maskCEP } from '@/lib/masks'
 
 type Business = {
   id: string
@@ -61,9 +62,11 @@ export default function ConfiguracoesClient({
   // ── Dados do negócio ──────────────────────────────────────────
   const [biz, setBiz] = useState({
     document_type: business?.document_type ?? 'cnpj',
-    document_number: business?.document_number ?? '',
+    document_number: business?.document_number
+      ? (business.document_type === 'cpf' ? maskCPF(business.document_number) : maskCNPJ(business.document_number))
+      : '',
     razao_social: business?.razao_social ?? '',
-    address_zip: business?.address_zip ?? '',
+    address_zip: business?.address_zip ? maskCEP(business.address_zip) : '',
     address_street: business?.address_street ?? '',
     address_number: business?.address_number ?? '',
     address_complement: business?.address_complement ?? '',
@@ -207,16 +210,24 @@ export default function ConfiguracoesClient({
       {/* Dados do negócio */}
       <CollapsibleSection title="Dados do negócio">
         <div className="grid grid-cols-2 gap-3">
-          <select value={biz.document_type} onChange={e => setBiz({ ...biz, document_type: e.target.value })}
+          <select value={biz.document_type}
+            onChange={e => {
+              const type = e.target.value
+              const remasked = type === 'cpf' ? maskCPF(biz.document_number) : maskCNPJ(biz.document_number)
+              setBiz({ ...biz, document_type: type, document_number: remasked })
+            }}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm col-span-2 sm:col-span-1">
             <option value="cnpj">CNPJ</option>
             <option value="cpf">CPF</option>
           </select>
-          <input placeholder="Número do documento" value={biz.document_number} onChange={e => setBiz({ ...biz, document_number: e.target.value })}
+          <input placeholder={biz.document_type === 'cpf' ? '000.000.000-00' : '00.000.000/0001-00'}
+            maxLength={biz.document_type === 'cpf' ? 14 : 18}
+            value={biz.document_number}
+            onChange={e => setBiz({ ...biz, document_number: biz.document_type === 'cpf' ? maskCPF(e.target.value) : maskCNPJ(e.target.value) })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm col-span-2 sm:col-span-1" />
           <input placeholder="Razão social" value={biz.razao_social} onChange={e => setBiz({ ...biz, razao_social: e.target.value })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm col-span-2" />
-          <input placeholder="CEP" value={biz.address_zip} onChange={e => setBiz({ ...biz, address_zip: e.target.value })}
+          <input placeholder="00000-000" maxLength={9} value={biz.address_zip} onChange={e => setBiz({ ...biz, address_zip: maskCEP(e.target.value) })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
           <input placeholder="Cidade" value={biz.address_city} onChange={e => setBiz({ ...biz, address_city: e.target.value })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
