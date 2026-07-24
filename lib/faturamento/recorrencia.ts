@@ -10,7 +10,7 @@ type RecurringChargeRow = {
   business_id: string
   customer_id: string
   valor_cents: number
-  billing_type: BillingType
+  billing_type: Exclude<BillingType, 'pix_avulso'>
   description: string | null
   due_day: number
   next_due_date: string

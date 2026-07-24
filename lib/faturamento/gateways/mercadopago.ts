@@ -11,7 +11,7 @@ import type {
 
 const MP_BASE = 'https://api.mercadopago.com'
 
-const BILLING_TYPE_TO_MP: Record<BillingType, string> = {
+const BILLING_TYPE_TO_MP: Record<Exclude<BillingType, 'pix_avulso'>, string> = {
   pix: 'pix',
   boleto: 'bolbradesco',
   cartao: 'credit_card',

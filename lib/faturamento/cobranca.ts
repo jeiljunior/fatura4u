@@ -3,6 +3,7 @@
 // (lib/faturamento/recorrencia.ts), pra nunca duas implementações divergirem.
 import supabaseAdmin from '@/lib/supabase/admin'
 import { getGatewayForBusiness } from '@/lib/faturamento/gateways'
+import { tentarEmitirNotaAutomatica } from '@/lib/faturamento/nfse/emitir-nota'
 import type { BillingType, Charge } from '@/lib/faturamento/types'
 
 export class CriarCobrancaError extends Error {
@@ -15,7 +16,7 @@ export type CriarCobrancaParams = {
   businessId: string
   customerId: string
   valueCents: number
-  billingType: BillingType
+  billingType: Exclude<BillingType, 'pix_avulso'>
   dueDate?: string
   description?: string
   servicoId?: string | null
@@ -98,5 +99,53 @@ export async function criarCobranca(params: CriarCobrancaParams): Promise<Charge
     .single()
 
   if (error) throw new CriarCobrancaError(error.message, 500)
+  return charge as Charge
+}
+
+export type CriarCobrancaAvulsaParams = {
+  businessId: string
+  customerId: string
+  valueCents: number
+  dueDate?: string
+  servicoId?: string | null
+}
+
+// PIX Avulso: o tenant recebeu fora do gateway (chave PIX própria) e só
+// registra como já paga — sem QR Code, sem confirmação de webhook. Dispara a
+// emissão automática de nota fiscal na hora (mesmo gatilho que o webhook do
+// gateway usa quando uma cobrança normal é confirmada).
+export async function criarCobrancaAvulsa(params: CriarCobrancaAvulsaParams): Promise<Charge> {
+  const { data: customer } = await supabaseAdmin
+    .from('customers')
+    .select('id')
+    .eq('id', params.customerId)
+    .eq('business_id', params.businessId)
+    .single()
+
+  if (!customer) throw new CriarCobrancaError('Cliente não encontrado', 404)
+
+  const agora = new Date().toISOString()
+
+  const { data: charge, error } = await supabaseAdmin
+    .from('charges')
+    .insert({
+      business_id: params.businessId,
+      customer_id: params.customerId,
+      provider: 'manual',
+      provider_charge_id: null,
+      valor_cents: params.valueCents,
+      billing_type: 'pix_avulso',
+      status: 'recebida',
+      due_date: params.dueDate ?? agora.slice(0, 10),
+      paid_at: agora,
+      servico_id: params.servicoId ?? null,
+    })
+    .select()
+    .single()
+
+  if (error) throw new CriarCobrancaError(error.message, 500)
+
+  await tentarEmitirNotaAutomatica(params.businessId, charge.id)
+
   return charge as Charge
 }

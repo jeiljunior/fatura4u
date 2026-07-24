@@ -11,7 +11,7 @@ import type {
 
 const ASAAS_BASE = 'https://api.asaas.com/v3'
 
-const BILLING_TYPE_TO_ASAAS: Record<BillingType, string> = {
+const BILLING_TYPE_TO_ASAAS: Record<Exclude<BillingType, 'pix_avulso'>, string> = {
   pix: 'PIX',
   boleto: 'BOLETO',
   cartao: 'CREDIT_CARD',

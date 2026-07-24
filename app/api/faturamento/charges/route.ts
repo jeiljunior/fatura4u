@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { criarCobranca, CriarCobrancaError } from '@/lib/faturamento/cobranca'
+import { criarCobranca, criarCobrancaAvulsa, CriarCobrancaError } from '@/lib/faturamento/cobranca'
 import type { BillingType } from '@/lib/faturamento/types'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
-const BILLING_TYPES: BillingType[] = ['pix', 'boleto', 'cartao']
+const BILLING_TYPES: BillingType[] = ['pix', 'boleto', 'cartao', 'pix_avulso']
 
 async function getBusinessId() {
   return (await getEffectiveBusinessId())?.businessId ?? null
@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const charge = await criarCobranca({ businessId, customerId, valueCents, billingType, dueDate, description, servicoId })
+    const charge = billingType === 'pix_avulso'
+      ? await criarCobrancaAvulsa({ businessId, customerId, valueCents, dueDate, servicoId })
+      : await criarCobranca({ businessId, customerId, valueCents, billingType, dueDate, description, servicoId })
     return NextResponse.json({ charge })
   } catch (e) {
     if (e instanceof CriarCobrancaError) return NextResponse.json({ error: e.message }, { status: e.status })

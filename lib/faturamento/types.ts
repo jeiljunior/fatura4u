@@ -4,7 +4,7 @@
 
 export type GatewayProvider = 'asaas' | 'stripe' | 'pagarme' | 'mercadopago'
 
-export type BillingType = 'pix' | 'boleto' | 'cartao'
+export type BillingType = 'pix' | 'boleto' | 'cartao' | 'pix_avulso'
 
 export type ChargeStatus = 'pendente' | 'confirmada' | 'recebida' | 'vencida' | 'cancelada'
 
@@ -106,7 +106,9 @@ export type GatewayCustomerParams = {
 export type GatewayChargeParams = {
   providerCustomerId: string
   valueCents: number
-  billingType: BillingType
+  // 'pix_avulso' nunca passa por aqui — é registrado direto em charges sem
+  // tocar o gateway (ver criarCobrancaAvulsa em lib/faturamento/cobranca.ts).
+  billingType: Exclude<BillingType, 'pix_avulso'>
   dueDate?: string // ISO date
   description?: string
   // Alguns gateways (ex: Mercado Pago em cobrança PIX avulsa) exigem o payer

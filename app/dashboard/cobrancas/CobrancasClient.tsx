@@ -142,7 +142,7 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
               <tr key={c.id} className="border-t border-slate-100">
                 <td className="px-4 py-3 font-medium text-slate-800">{customerName(c.customers)}</td>
                 <td className="px-4 py-3 text-slate-700">{fmt(c.valor_cents)}</td>
-                <td className="px-4 py-3 text-slate-500 uppercase text-xs font-semibold">{c.billing_type}</td>
+                <td className="px-4 py-3 text-slate-500 uppercase text-xs font-semibold">{c.billing_type === 'pix_avulso' ? 'PIX avulso' : c.billing_type}</td>
                 <td className="px-4 py-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${STATUS_COLOR[c.status]}`}>{STATUS_LABEL[c.status]}</span>
                 </td>
@@ -226,9 +226,17 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
                 <option value="pix">PIX</option>
                 <option value="boleto">Boleto</option>
                 <option value="cartao">Cartão</option>
+                <option value="pix_avulso">PIX Avulso (recebido fora do sistema)</option>
               </select>
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+              {billingType === 'pix_avulso' ? (
+                <p className="text-xs text-slate-400">
+                  Registrada direto como recebida hoje, sem QR Code — use quando já recebeu por fora (chave PIX própria).
+                  Emite nota automaticamente se essa opção estiver ativa em Configurações.
+                </p>
+              ) : (
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+              )}
               <input placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
             </div>
