@@ -12,6 +12,7 @@ type Invoice = {
 }
 
 type Customer = { id: string; name: string; document: string | null }
+type Servico = { id: string; nome: string; descricao: string | null; preco_cents: number | null }
 
 const STATUS_LABEL: Record<string, string> = {
   rascunho: 'Rascunho', processando: 'Processando', autorizada: 'Autorizada', rejeitada: 'Rejeitada', cancelada: 'Cancelada',
@@ -26,14 +27,24 @@ function customerName(c: Invoice['customers']) {
   return Array.isArray(c) ? c[0]?.name ?? '—' : c.name
 }
 
-export default function NotasClient({ initialInvoices, customers }: { initialInvoices: Invoice[]; customers: Customer[] }) {
+export default function NotasClient({ initialInvoices, customers, servicos }: { initialInvoices: Invoice[]; customers: Customer[]; servicos: Servico[] }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [customerId, setCustomerId] = useState('')
+  const [servicoId, setServicoId] = useState('')
   const [valorServicos, setValorServicos] = useState('')
   const [descricaoServico, setDescricaoServico] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  function handleSelectServico(id: string) {
+    setServicoId(id)
+    const s = servicos.find(x => x.id === id)
+    if (s) {
+      setDescricaoServico(s.descricao || s.nome)
+      if (s.preco_cents != null) setValorServicos((s.preco_cents / 100).toFixed(2).replace('.', ','))
+    }
+  }
 
   async function handleEmit() {
     setSaving(true)
@@ -41,13 +52,13 @@ export default function NotasClient({ initialInvoices, customers }: { initialInv
     const res = await fetch('/api/faturamento/invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customerId, valorServicos: Number(valorServicos.replace(',', '.')), descricaoServico }),
+      body: JSON.stringify({ customerId, servicoId: servicoId || undefined, valorServicos: Number(valorServicos.replace(',', '.')), descricaoServico }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao emitir nota'); return }
     setOpen(false)
-    setCustomerId(''); setValorServicos(''); setDescricaoServico('')
+    setCustomerId(''); setServicoId(''); setValorServicos(''); setDescricaoServico('')
     router.refresh()
   }
 
@@ -106,6 +117,13 @@ export default function NotasClient({ initialInvoices, customers }: { initialInv
                 <option value="">Selecione o cliente</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              {servicos.length > 0 && (
+                <select value={servicoId} onChange={e => handleSelectServico(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                  <option value="">Serviço (opcional — preenche valor e descrição)</option>
+                  {servicos.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                </select>
+              )}
               <input placeholder="Valor do serviço (R$)" value={valorServicos} onChange={e => setValorServicos(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
               <textarea placeholder="Descrição do serviço" value={descricaoServico} onChange={e => setDescricaoServico(e.target.value)}

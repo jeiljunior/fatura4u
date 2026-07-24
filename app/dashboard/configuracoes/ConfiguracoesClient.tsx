@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ServicosSection, { Servico } from '@/components/ServicosSection'
+import CollapsibleSection from '@/components/CollapsibleSection'
 
 type Business = {
   id: string
@@ -45,13 +47,14 @@ const DEFAULT_MSG_HOJE = 'Olá, {cliente}! Sua cobrança de {valor} com {negocio
 const DEFAULT_MSG_ATRASO = 'Olá, {cliente}, notamos que sua cobrança de {valor} com {negocio} está vencida há {dias}. Regularize quando puder.\n\nPague aqui: {link}'
 
 export default function ConfiguracoesClient({
-  business, config, certificado, gateways, whatsappConectado,
+  business, config, certificado, gateways, whatsappConectado, servicos,
 }: {
   business: Business | null
   config: Config
   certificado: Certificado
   gateways: Gateway[]
   whatsappConectado: boolean
+  servicos: Servico[]
 }) {
   const router = useRouter()
 
@@ -202,8 +205,7 @@ export default function ConfiguracoesClient({
   return (
     <div className="space-y-6">
       {/* Dados do negócio */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-4">Dados do negócio</h2>
+      <CollapsibleSection title="Dados do negócio">
         <div className="grid grid-cols-2 gap-3">
           <select value={biz.document_type} onChange={e => setBiz({ ...biz, document_type: e.target.value })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm col-span-2 sm:col-span-1">
@@ -231,14 +233,11 @@ export default function ConfiguracoesClient({
           className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingBiz ? 'Salvando...' : 'Salvar dados do negócio'}
         </button>
-      </section>
+      </CollapsibleSection>
 
       {/* Personalização (white label) */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-1">Personalização</h2>
-        <p className="text-slate-400 text-sm mb-4">
-          Seu logo e sua cor aparecem no seu próprio painel — não muda o domínio nem a marca do FATUR4U.
-        </p>
+      <CollapsibleSection title="Personalização"
+        subtitle="Seu logo e sua cor aparecem no seu próprio painel — não muda o domínio nem a marca do FATUR4U.">
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
@@ -263,11 +262,10 @@ export default function ConfiguracoesClient({
           className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingBrand ? 'Salvando...' : 'Salvar personalização'}
         </button>
-      </section>
+      </CollapsibleSection>
 
       {/* Config fiscal */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-4">Configuração fiscal (NFS-e)</h2>
+      <CollapsibleSection title="Configuração fiscal (NFS-e)">
         <div className="grid grid-cols-2 gap-3">
           <select value={cfg.regime_tributario} onChange={e => setCfg({ ...cfg, regime_tributario: e.target.value })}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm">
@@ -301,14 +299,13 @@ export default function ConfiguracoesClient({
           className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
           {savingCfg ? 'Salvando...' : 'Salvar configuração fiscal'}
         </button>
-      </section>
+      </CollapsibleSection>
+
+      <ServicosSection initialServicos={servicos} />
 
       {/* Certificado digital */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-1">Certificado digital A1</h2>
-        <p className="text-slate-400 text-sm mb-4">
-          {certificado?.valido_ate ? `Cadastrado — válido até ${certificado.valido_ate}` : 'Nenhum certificado cadastrado ainda'}
-        </p>
+      <CollapsibleSection title="Certificado digital A1"
+        subtitle={certificado?.valido_ate ? `Cadastrado — válido até ${certificado.valido_ate}` : 'Nenhum certificado cadastrado ainda'}>
         <div className="flex flex-col sm:flex-row gap-3">
           <input type="file" accept=".pfx,.p12" onChange={e => setCertFile(e.target.files?.[0] ?? null)}
             className="text-sm" />
@@ -320,14 +317,11 @@ export default function ConfiguracoesClient({
           </button>
         </div>
         {certError && <p className="text-red-500 text-sm mt-2">{certError}</p>}
-      </section>
+      </CollapsibleSection>
 
       {/* Gateway de pagamento */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-1">Gateway de pagamento (Asaas)</h2>
-        <p className="text-slate-400 text-sm mb-4">
-          {asaasConnected ? '✓ Conectado' : 'Não conectado — cole a chave de API da sua conta Asaas'}
-        </p>
+      <CollapsibleSection title="Gateway de pagamento (Asaas)"
+        subtitle={asaasConnected ? '✓ Conectado' : 'Não conectado — cole a chave de API da sua conta Asaas'}>
         <div className="flex flex-col sm:flex-row gap-3">
           <input type="password" placeholder="Chave de API do Asaas" value={asaasKey} onChange={e => setAsaasKey(e.target.value)}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex-1" />
@@ -336,16 +330,11 @@ export default function ConfiguracoesClient({
             {savingGw ? 'Salvando...' : asaasConnected ? 'Reconectar' : 'Conectar'}
           </button>
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* Importar clientes */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-1">Importar clientes</h2>
-        <p className="text-slate-400 text-sm mb-1">
-          Planilha .xlsx, .xls ou .csv com dados de pessoa física ou jurídica (nome/razão social, CPF/CNPJ,
-          endereço, etc. — nomes de coluna flexíveis). Clientes existentes são atualizados por documento ou
-          telefone; os demais são criados.
-        </p>
+      <CollapsibleSection title="Importar clientes"
+        subtitle="Planilha .xlsx, .xls ou .csv com dados de pessoa física ou jurídica — clientes existentes são atualizados por documento ou telefone, os demais são criados.">
         <a href="/templates/clientes-modelo.xlsx" download
           className="inline-block text-sm text-[var(--brand-primary)] font-semibold hover:underline mb-4">
           📥 Baixar modelo em Excel
@@ -370,19 +359,13 @@ export default function ConfiguracoesClient({
             )}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
 
       {/* Régua de cobrança */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="font-bold text-slate-900 mb-1">Lembretes automáticos</h2>
-        <p className="text-slate-400 text-sm mb-4">
-          Avisa o cliente 3 dias antes, no dia e depois do vencimento, sem você precisar cobrar manualmente.
-        </p>
-        <p className="text-xs mb-4">
-          WhatsApp: {whatsappConectado
-            ? <span className="text-emerald-600 font-semibold">✓ conectado</span>
-            : <span className="text-slate-400">não conectado — fale com o suporte pra habilitar</span>}
-        </p>
+      <CollapsibleSection title="Lembretes automáticos"
+        subtitle={<>Avisa o cliente 3 dias antes, no dia e depois do vencimento. WhatsApp: {whatsappConectado
+          ? <span className="text-emerald-600 font-semibold">✓ conectado</span>
+          : <span className="text-slate-400">não conectado — fale com o suporte pra habilitar</span>}</>}>
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={cfg.regua_whatsapp_ativa} onChange={e => setCfg({ ...cfg, regua_whatsapp_ativa: e.target.checked })} />
@@ -452,7 +435,7 @@ export default function ConfiguracoesClient({
             Restaurar mensagens padrão
           </button>
         </div>
-      </section>
+      </CollapsibleSection>
     </div>
   )
 }

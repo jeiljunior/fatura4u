@@ -19,6 +19,7 @@ export type EmitirNotaFiscalParams = {
   businessId: string
   customerId: string
   chargeId?: string | null
+  servicoId?: string | null
   valorServicos: number
   descricaoServico: string
 }
@@ -30,24 +31,35 @@ export class EmitirNotaFiscalError extends Error {
 }
 
 export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
-  const { businessId, customerId, chargeId, valorServicos, descricaoServico } = params
+  const { businessId, customerId, chargeId, servicoId, valorServicos, descricaoServico } = params
 
   const [
     { data: config },
     { data: biz },
     { data: certRow },
     { data: customer },
+    { data: servico },
   ] = await Promise.all([
     supabaseAdmin.from('faturamento_config').select('*').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('businesses').select('document_type, document_number, razao_social, name').eq('id', businessId).single(),
     supabaseAdmin.from('certificados_digitais').select('pfx').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('customers').select('id, name, document').eq('id', customerId).eq('business_id', businessId).single(),
+    servicoId
+      ? supabaseAdmin.from('servicos').select('codigo_servico, aliquota_iss').eq('id', servicoId).eq('business_id', businessId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   if (!config?.active) throw new EmitirNotaFiscalError('Faturamento não está ativo pra este negócio', 403)
   if (!certRow) throw new EmitirNotaFiscalError('Nenhum certificado digital cadastrado ainda', 400)
   if (!customer) throw new EmitirNotaFiscalError('Cliente não encontrado', 404)
-  if (!config.municipio_ibge || !config.codigo_servico_padrao || !config.codigo_nbs || !config.aliquota_iss_padrao || !config.regime_tributario) {
+
+  // Serviço do catálogo pode ter código/alíquota próprios — usa eles no lugar
+  // do padrão geral quando disponíveis (mais preciso pra quem presta mais de
+  // um tipo de serviço, cada um com tributação diferente).
+  const codigoServico = servico?.codigo_servico || config.codigo_servico_padrao
+  const aliquotaIss = servico?.aliquota_iss ?? config.aliquota_iss_padrao
+
+  if (!config.municipio_ibge || !codigoServico || !config.codigo_nbs || !aliquotaIss || !config.regime_tributario) {
     throw new EmitirNotaFiscalError('Complete a configuração fiscal (município, código de serviço, código NBS, alíquota, regime) antes de emitir', 400)
   }
 
@@ -66,8 +78,8 @@ export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
       charge_id: chargeId ?? null,
       status: 'processando' as InvoiceStatus,
       valor_servicos: valorServicos,
-      codigo_servico: config.codigo_servico_padrao,
-      aliquota: config.aliquota_iss_padrao,
+      codigo_servico: codigoServico,
+      aliquota: aliquotaIss,
     })
     .select()
     .single()
@@ -99,13 +111,13 @@ export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
           }
         : undefined,
       servico: {
-        codigoTribNac: config.codigo_servico_padrao,
+        codigoTribNac: codigoServico,
         codigoNbs: config.codigo_nbs,
         descricao: descricaoServico,
       },
       valores: {
         valorServico: Number(valorServicos),
-        aliquotaIss: Number(config.aliquota_iss_padrao),
+        aliquotaIss: Number(aliquotaIss),
       },
     })
 
@@ -167,18 +179,21 @@ export async function tentarEmitirNotaAutomatica(businessId: string, chargeId: s
 
     const { data: charge } = await supabaseAdmin
       .from('charges')
-      .select('customer_id, valor_cents')
+      .select('customer_id, valor_cents, servico_id, servicos(nome, descricao)')
       .eq('id', chargeId)
       .single()
 
     if (!charge) return
 
+    const servicoInfo = Array.isArray(charge.servicos) ? charge.servicos[0] : charge.servicos
+
     await emitirNotaFiscal({
       businessId,
       customerId: charge.customer_id,
       chargeId,
+      servicoId: charge.servico_id,
       valorServicos: charge.valor_cents / 100,
-      descricaoServico: 'Serviço prestado',
+      descricaoServico: servicoInfo?.descricao || servicoInfo?.nome || 'Serviço prestado',
     })
   } catch {
     // Erro na emissão automática não deve derrubar o webhook do gateway de

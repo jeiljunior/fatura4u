@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const body = await req.json()
-  const { customerId, chargeId, valorServicos, descricaoServico } = body
+  const { customerId, chargeId, servicoId, valorServicos, descricaoServico } = body
 
   if (!customerId || !valorServicos || !descricaoServico) {
     return NextResponse.json({ error: 'Cliente, valor e descrição do serviço são obrigatórios' }, { status: 400 })
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       businessId,
       customerId,
       chargeId,
+      servicoId,
       valorServicos,
       descricaoServico,
     })

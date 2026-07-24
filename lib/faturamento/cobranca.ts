@@ -18,6 +18,7 @@ export type CriarCobrancaParams = {
   billingType: BillingType
   dueDate?: string
   description?: string
+  servicoId?: string | null
   recurringChargeId?: string
 }
 
@@ -91,6 +92,7 @@ export async function criarCobranca(params: CriarCobrancaParams): Promise<Charge
       boleto_url: result.boletoUrl ?? null,
       payment_link: result.paymentLink ?? null,
       recurring_charge_id: params.recurringChargeId ?? null,
+      servico_id: params.servicoId ?? null,
     })
     .select()
     .single()

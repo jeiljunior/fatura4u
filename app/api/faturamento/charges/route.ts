@@ -37,14 +37,14 @@ export async function POST(req: NextRequest) {
   if (!businessId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const body = await req.json()
-  const { customerId, valueCents, billingType, dueDate, description } = body
+  const { customerId, valueCents, billingType, dueDate, description, servicoId } = body
 
   if (!customerId || !valueCents || !BILLING_TYPES.includes(billingType)) {
     return NextResponse.json({ error: 'Dados da cobrança inválidos' }, { status: 400 })
   }
 
   try {
-    const charge = await criarCobranca({ businessId, customerId, valueCents, billingType, dueDate, description })
+    const charge = await criarCobranca({ businessId, customerId, valueCents, billingType, dueDate, description, servicoId })
     return NextResponse.json({ charge })
   } catch (e) {
     if (e instanceof CriarCobrancaError) return NextResponse.json({ error: e.message }, { status: e.status })

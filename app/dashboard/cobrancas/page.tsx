@@ -8,10 +8,11 @@ export default async function CobrancasPage() {
   const effective = await getEffectiveBusinessId()
   if (!effective) redirect('/login')
 
-  const [{ data: charges }, { data: customers }, { data: recorrentes }] = await Promise.all([
+  const [{ data: charges }, { data: customers }, { data: recorrentes }, { data: servicos }] = await Promise.all([
     supabaseAdmin.from('charges').select('*, customers(name)').eq('business_id', effective.businessId).order('created_at', { ascending: false }),
     supabaseAdmin.from('customers').select('id, name, document').eq('business_id', effective.businessId).order('name'),
     supabaseAdmin.from('recurring_charges').select('*, customers(name)').eq('business_id', effective.businessId).order('created_at', { ascending: false }),
+    supabaseAdmin.from('servicos').select('id, nome, descricao, preco_cents').eq('business_id', effective.businessId).eq('ativo', true).order('nome'),
   ])
 
   return (
@@ -22,7 +23,7 @@ export default async function CobrancasPage() {
       </div>
       <div className="p-6">
         <RecorrentesClient initialRecorrentes={recorrentes ?? []} customers={customers ?? []} />
-        <CobrancasClient initialCharges={charges ?? []} customers={customers ?? []} />
+        <CobrancasClient initialCharges={charges ?? []} customers={customers ?? []} servicos={servicos ?? []} />
       </div>
     </main>
   )

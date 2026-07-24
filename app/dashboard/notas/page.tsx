@@ -7,9 +7,10 @@ export default async function NotasPage() {
   const effective = await getEffectiveBusinessId()
   if (!effective) redirect('/login')
 
-  const [{ data: invoices }, { data: customers }] = await Promise.all([
+  const [{ data: invoices }, { data: customers }, { data: servicos }] = await Promise.all([
     supabaseAdmin.from('invoices').select('*, customers(name)').eq('business_id', effective.businessId).order('created_at', { ascending: false }),
     supabaseAdmin.from('customers').select('id, name, document').eq('business_id', effective.businessId).order('name'),
+    supabaseAdmin.from('servicos').select('id, nome, descricao, preco_cents').eq('business_id', effective.businessId).eq('ativo', true).order('nome'),
   ])
 
   return (
@@ -19,7 +20,7 @@ export default async function NotasPage() {
         <p className="text-slate-400 text-sm mt-0.5">Emissão de NFS-e Nacional</p>
       </div>
       <div className="p-6">
-        <NotasClient initialInvoices={invoices ?? []} customers={customers ?? []} />
+        <NotasClient initialInvoices={invoices ?? []} customers={customers ?? []} servicos={servicos ?? []} />
       </div>
     </main>
   )

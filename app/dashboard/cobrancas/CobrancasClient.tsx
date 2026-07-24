@@ -16,6 +16,7 @@ type Charge = {
 }
 
 type Customer = { id: string; name: string; document: string | null }
+type Servico = { id: string; nome: string; descricao: string | null; preco_cents: number | null }
 
 const STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente', confirmada: 'Confirmada', recebida: 'Recebida', vencida: 'Vencida', cancelada: 'Cancelada',
@@ -34,7 +35,7 @@ function customerName(c: Charge['customers']) {
   return Array.isArray(c) ? c[0]?.name ?? '—' : c.name
 }
 
-export default function CobrancasClient({ initialCharges, customers }: { initialCharges: Charge[]; customers: Customer[] }) {
+export default function CobrancasClient({ initialCharges, customers, servicos }: { initialCharges: Charge[]; customers: Customer[]; servicos: Servico[] }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [customerId, setCustomerId] = useState('')
@@ -42,6 +43,7 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   const [customerSearch, setCustomerSearch] = useState('')
   const [showCustomerPicker, setShowCustomerPicker] = useState(false)
   const [showNovoCliente, setShowNovoCliente] = useState(false)
+  const [servicoId, setServicoId] = useState('')
   const [valueReais, setValueReais] = useState('')
   const [billingType, setBillingType] = useState('pix')
   const [dueDate, setDueDate] = useState('')
@@ -49,6 +51,15 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState('')
+
+  function handleSelectServico(id: string) {
+    setServicoId(id)
+    const s = servicos.find(x => x.id === id)
+    if (s) {
+      setDescription(s.descricao || s.nome)
+      if (s.preco_cents != null) setValueReais((s.preco_cents / 100).toFixed(2).replace('.', ','))
+    }
+  }
 
   const selectedCustomer = customerList.find(c => c.id === customerId)
   const filteredCustomers = customerSearch
@@ -76,13 +87,14 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
         billingType,
         dueDate: dueDate || undefined,
         description,
+        servicoId: servicoId || undefined,
       }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao criar cobrança'); return }
     setOpen(false)
-    setCustomerId(''); setCustomerSearch(''); setValueReais(''); setDueDate(''); setDescription('')
+    setCustomerId(''); setCustomerSearch(''); setServicoId(''); setValueReais(''); setDueDate(''); setDescription('')
     router.refresh()
   }
 
@@ -177,6 +189,13 @@ export default function CobrancasClient({ initialCharges, customers }: { initial
                   </>
                 )}
               </div>
+              {servicos.length > 0 && (
+                <select value={servicoId} onChange={e => handleSelectServico(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                  <option value="">Serviço (opcional — preenche valor e descrição)</option>
+                  {servicos.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                </select>
+              )}
               <input placeholder="Valor (R$)" value={valueReais} onChange={e => setValueReais(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
               <select value={billingType} onChange={e => setBillingType(e.target.value)}
