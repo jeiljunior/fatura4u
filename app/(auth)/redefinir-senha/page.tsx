@@ -26,30 +26,49 @@ export default function RedefinirSenhaPage() {
 
     // O createBrowserClient do @supabase/ssr força flowType "pkce", que só
     // reconhece sessão vinda de "?code=" na URL — mas o link de e-mail de
-    // recuperação de senha do Supabase ainda usa o formato antigo, com os
-    // tokens no FRAGMENTO da URL (#access_token=...&type=recovery). Isso faz
-    // o detectSessionInUrl automático nunca disparar (bug real encontrado
-    // testando o fluxo de ponta a ponta: o link chegava válido, mas a tela
-    // sempre caía em "link inválido"). Por isso extraímos os tokens do hash
-    // na mão e chamamos setSession() direto, em vez de confiar só no evento
-    // automático do client.
-    async function tentarSessaoDoHash() {
-      const params = new URLSearchParams(window.location.hash.slice(1))
-      if (params.get('type') !== 'recovery') return false
+    // recuperação de senha do Supabase (template padrão) usa o formato antigo,
+    // com os tokens no FRAGMENTO da URL (#access_token=...&type=recovery). O
+    // detectSessionInUrl automático nunca disparava por causa disso (bug real
+    // encontrado testando o fluxo de ponta a ponta). Por isso extraímos os
+    // tokens do hash na mão e chamamos setSession() direto.
+    //
+    // Só isso não bastou: o link continua passando pelo endpoint de uso único
+    // /auth/v1/verify antes de chegar aqui — se algo "visitar" esse link antes
+    // do clique de verdade do usuário (scanner de segurança de e-mail, Safe
+    // Browsing etc.), o token já é consumido e o clique real cai em
+    // "link inválido" mesmo sem o usuário ter feito nada de errado. Por isso
+    // também aceitamos o formato ?token_hash=...&type=recovery na query string
+    // — link customizado no template de e-mail do Supabase, que aponta direto
+    // pra essa página em vez de passar pelo /verify de uso único, e a
+    // verificação é feita aqui via verifyOtp() no primeiro (e único) acesso
+    // real do usuário.
+    async function tentarSessao() {
+      const search = new URLSearchParams(window.location.search)
+      const tokenHash = search.get('token_hash')
+      if (tokenHash && search.get('type') === 'recovery') {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        if (!error) {
+          window.history.replaceState(null, '', window.location.pathname)
+          return true
+        }
+      }
 
-      const access_token = params.get('access_token')
-      const refresh_token = params.get('refresh_token')
+      const hash = new URLSearchParams(window.location.hash.slice(1))
+      if (hash.get('type') !== 'recovery') return false
+
+      const access_token = hash.get('access_token')
+      const refresh_token = hash.get('refresh_token')
       if (!access_token || !refresh_token) return false
 
       const { error } = await supabase.auth.setSession({ access_token, refresh_token })
       if (error) return false
 
-      // Limpa o hash da URL pra não deixar o token exposto no histórico do navegador
+      // Limpa a URL pra não deixar o token exposto no histórico do navegador
       window.history.replaceState(null, '', window.location.pathname)
       return true
     }
 
-    tentarSessaoDoHash().then(ok => { if (ok) setReady(true) })
+    tentarSessao().then(ok => { if (ok) setReady(true) })
 
     // Mantido como reforço — cobre o caso de a Supabase um dia passar a usar
     // o fluxo PKCE de verdade (?code=), que o client já sabe processar sozinho.
