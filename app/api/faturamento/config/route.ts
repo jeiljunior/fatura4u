@@ -51,6 +51,9 @@ export async function PUT(req: NextRequest) {
     emissao_automatica: body.emissao_automatica ?? false,
     regua_whatsapp_ativa: body.regua_whatsapp_ativa ?? true,
     regua_email_ativa: body.regua_email_ativa ?? true,
+    regua_msg_antes: body.regua_msg_antes ?? null,
+    regua_msg_hoje: body.regua_msg_hoje ?? null,
+    regua_msg_atraso: body.regua_msg_atraso ?? null,
     active: body.active ?? true,
   }
 

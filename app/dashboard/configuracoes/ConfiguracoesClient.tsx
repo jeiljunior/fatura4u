@@ -32,10 +32,17 @@ type Config = {
   emissao_automatica: boolean
   regua_whatsapp_ativa: boolean
   regua_email_ativa: boolean
+  regua_msg_antes: string | null
+  regua_msg_hoje: string | null
+  regua_msg_atraso: string | null
 } | null
 
 type Certificado = { valido_ate: string | null } | null
 type Gateway = { provider: string; active: boolean }
+
+const DEFAULT_MSG_ANTES = 'Olá, {cliente}! Sua cobrança de {valor} com {negocio} vence em {dias}.\n\nPague aqui: {link}'
+const DEFAULT_MSG_HOJE = 'Olá, {cliente}! Sua cobrança de {valor} com {negocio} vence hoje.\n\nPague aqui: {link}'
+const DEFAULT_MSG_ATRASO = 'Olá, {cliente}, notamos que sua cobrança de {valor} com {negocio} está vencida há {dias}. Regularize quando puder.\n\nPague aqui: {link}'
 
 export default function ConfiguracoesClient({
   business, config, certificado, gateways, whatsappConectado,
@@ -118,6 +125,9 @@ export default function ConfiguracoesClient({
     emissao_automatica: config?.emissao_automatica ?? false,
     regua_whatsapp_ativa: config?.regua_whatsapp_ativa ?? true,
     regua_email_ativa: config?.regua_email_ativa ?? true,
+    regua_msg_antes: config?.regua_msg_antes ?? DEFAULT_MSG_ANTES,
+    regua_msg_hoje: config?.regua_msg_hoje ?? DEFAULT_MSG_HOJE,
+    regua_msg_atraso: config?.regua_msg_atraso ?? DEFAULT_MSG_ATRASO,
   })
   const [savingCfg, setSavingCfg] = useState(false)
 
@@ -164,6 +174,28 @@ export default function ConfiguracoesClient({
     })
     setSavingGw(false)
     setAsaasKey('')
+    router.refresh()
+  }
+
+  // ── Importar clientes (planilha) ────────────────────────────────
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ total: number; inserted: number; updated: number; errors?: string[] } | null>(null)
+  const [importError, setImportError] = useState('')
+
+  async function handleImport() {
+    if (!importFile) return
+    setImporting(true)
+    setImportError('')
+    setImportResult(null)
+    const fd = new FormData()
+    fd.append('file', importFile)
+    const res = await fetch('/api/clientes/importar', { method: 'POST', body: fd })
+    const data = await res.json()
+    setImporting(false)
+    if (!res.ok) { setImportError(data.error ?? 'Erro ao importar planilha'); return }
+    setImportResult(data)
+    setImportFile(null)
     router.refresh()
   }
 
@@ -306,6 +338,35 @@ export default function ConfiguracoesClient({
         </div>
       </section>
 
+      {/* Importar clientes */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-6">
+        <h2 className="font-bold text-slate-900 mb-1">Importar clientes</h2>
+        <p className="text-slate-400 text-sm mb-4">
+          Planilha .xlsx, .xls ou .csv com colunas Nome, Telefone, E-mail, Documento e Observações
+          (nomes flexíveis). Clientes existentes são atualizados por documento ou telefone; os demais são criados.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input type="file" accept=".xlsx,.xls,.csv" onChange={e => setImportFile(e.target.files?.[0] ?? null)}
+            className="text-sm" disabled={importing} />
+          <button onClick={handleImport} disabled={importing || !importFile}
+            className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            {importing ? 'Importando...' : 'Importar planilha'}
+          </button>
+        </div>
+        {importError && <p className="text-red-500 text-sm mt-2">{importError}</p>}
+        {importResult && (
+          <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800">
+            {importResult.total} cliente{importResult.total > 1 ? 's' : ''} processado{importResult.total > 1 ? 's' : ''}:
+            {' '}{importResult.inserted} novo{importResult.inserted !== 1 ? 's' : ''}, {importResult.updated} atualizado{importResult.updated !== 1 ? 's' : ''}.
+            {importResult.errors && (
+              <ul className="mt-2 text-red-600 list-disc list-inside">
+                {importResult.errors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+      </section>
+
       {/* Régua de cobrança */}
       <section className="bg-white border border-slate-200 rounded-2xl p-6">
         <h2 className="font-bold text-slate-900 mb-1">Lembretes automáticos</h2>
@@ -327,10 +388,65 @@ export default function ConfiguracoesClient({
             Lembrete por e-mail
           </label>
         </div>
-        <button onClick={saveCfg} disabled={savingCfg}
-          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
-          {savingCfg ? 'Salvando...' : 'Salvar preferências de lembrete'}
-        </button>
+
+        <div className="border-t border-slate-100 mt-5 pt-5">
+          <div className="flex flex-wrap gap-2 mb-4">
+            {['{cliente}', '{negocio}', '{valor}', '{dias}', '{link}'].map(v => (
+              <span key={v} className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded-lg border border-slate-200">{v}</span>
+            ))}
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                ⏳ Antes do vencimento <span className="font-normal text-slate-400">(3 dias antes)</span>
+              </label>
+              <textarea
+                value={cfg.regua_msg_antes}
+                onChange={e => setCfg({ ...cfg, regua_msg_antes: e.target.value })}
+                rows={5}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-relaxed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                📅 No dia do vencimento
+              </label>
+              <textarea
+                value={cfg.regua_msg_hoje}
+                onChange={e => setCfg({ ...cfg, regua_msg_hoje: e.target.value })}
+                rows={5}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-relaxed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                ⚠️ Cobrança vencida <span className="font-normal text-slate-400">(1, 3 e 7 dias depois)</span>
+              </label>
+              <textarea
+                value={cfg.regua_msg_atraso}
+                onChange={e => setCfg({ ...cfg, regua_msg_atraso: e.target.value })}
+                rows={5}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-relaxed"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-5">
+          <button onClick={saveCfg} disabled={savingCfg}
+            className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            {savingCfg ? 'Salvando...' : 'Salvar preferências de lembrete'}
+          </button>
+          <button
+            onClick={() => setCfg({ ...cfg, regua_msg_antes: DEFAULT_MSG_ANTES, regua_msg_hoje: DEFAULT_MSG_HOJE, regua_msg_atraso: DEFAULT_MSG_ATRASO })}
+            className="text-sm text-slate-400 hover:text-slate-600 transition"
+          >
+            Restaurar mensagens padrão
+          </button>
+        </div>
       </section>
     </div>
   )

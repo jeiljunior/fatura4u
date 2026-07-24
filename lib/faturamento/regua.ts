@@ -30,12 +30,32 @@ function diasParaVencer(dueDate: string, hoje: string): number {
   return Math.round((a - b) / 86400000)
 }
 
-function montarMensagem(offset: number, nomeCliente: string, nomeNegocio: string, valorFmt: string, link: string | null): string {
+type TemplatesRegua = { antes?: string | null; hoje?: string | null; atraso?: string | null }
+
+function substituirPlaceholders(template: string, vars: Record<string, string>): string {
+  return Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, v), template)
+}
+
+// Se o tenant customizou a mensagem em Configurações, usa ela (com
+// placeholders {cliente} {negocio} {valor} {dias} {link} substituídos).
+// Senão, cai no texto padrão hardcoded abaixo.
+function montarMensagem(offset: number, nomeCliente: string, nomeNegocio: string, valorFmt: string, link: string | null, templates: TemplatesRegua = {}): string {
   const linkTxt = link ? `\n\nPague aqui: ${link}` : ''
-  if (offset > 0) return `Olá, ${nomeCliente}! Sua cobrança de ${valorFmt} com ${nomeNegocio} vence em ${offset} dia${offset > 1 ? 's' : ''}.${linkTxt}`
-  if (offset === 0) return `Olá, ${nomeCliente}! Sua cobrança de ${valorFmt} com ${nomeNegocio} vence hoje.${linkTxt}`
+  const varsBase = { cliente: nomeCliente, negocio: nomeNegocio, valor: valorFmt, link: link ?? '' }
+
+  if (offset > 0) {
+    const dias = `${offset} dia${offset > 1 ? 's' : ''}`
+    if (templates.antes) return substituirPlaceholders(templates.antes, { ...varsBase, dias })
+    return `Olá, ${nomeCliente}! Sua cobrança de ${valorFmt} com ${nomeNegocio} vence em ${dias}.${linkTxt}`
+  }
+  if (offset === 0) {
+    if (templates.hoje) return substituirPlaceholders(templates.hoje, varsBase)
+    return `Olá, ${nomeCliente}! Sua cobrança de ${valorFmt} com ${nomeNegocio} vence hoje.${linkTxt}`
+  }
   const atraso = Math.abs(offset)
-  return `Olá, ${nomeCliente}, notamos que sua cobrança de ${valorFmt} com ${nomeNegocio} está vencida há ${atraso} dia${atraso > 1 ? 's' : ''}. Regularize quando puder.${linkTxt}`
+  const dias = `${atraso} dia${atraso > 1 ? 's' : ''}`
+  if (templates.atraso) return substituirPlaceholders(templates.atraso, { ...varsBase, dias })
+  return `Olá, ${nomeCliente}, notamos que sua cobrança de ${valorFmt} com ${nomeNegocio} está vencida há ${dias}. Regularize quando puder.${linkTxt}`
 }
 
 function assuntoEmail(offset: number): string {
@@ -79,14 +99,19 @@ export async function enviarLembretesDoDia(): Promise<{ verificadas: number; env
     if (!customer) continue
 
     const valorFmt = `R$ ${(raw.valor_cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-    const texto = montarMensagem(offset, customer.name, business?.name ?? 'a empresa', valorFmt, raw.payment_link)
 
     try {
       const { data: config } = await supabaseAdmin
         .from('faturamento_config')
-        .select('regua_whatsapp_ativa, regua_email_ativa')
+        .select('regua_whatsapp_ativa, regua_email_ativa, regua_msg_antes, regua_msg_hoje, regua_msg_atraso')
         .eq('business_id', raw.business_id)
         .maybeSingle()
+
+      const texto = montarMensagem(offset, customer.name, business?.name ?? 'a empresa', valorFmt, raw.payment_link, {
+        antes: config?.regua_msg_antes,
+        hoje: config?.regua_msg_hoje,
+        atraso: config?.regua_msg_atraso,
+      })
 
       if (customer.phone && (config?.regua_whatsapp_ativa ?? true) && !(await jaEnviado(raw.id, offset, 'whatsapp'))) {
         const ok = await sendWhatsAppText(raw.business_id, customer.phone, texto)
