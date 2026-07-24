@@ -140,7 +140,10 @@ export default function ContasPagarClient({ initialContas }: { initialContas: Co
       {open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="font-bold text-slate-900 mb-4">Nova conta a pagar</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Nova conta a pagar</h2>
+              <button onClick={() => setOpen(false)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
             <div className="space-y-3">
               <input placeholder="Descrição (ex: Aluguel do escritório)" value={descricao} onChange={e => setDescricao(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />

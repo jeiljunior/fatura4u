@@ -110,7 +110,10 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
       {open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="font-bold text-slate-900 mb-4">Emitir nota fiscal</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Emitir nota fiscal</h2>
+              <button onClick={() => setOpen(false)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
             <div className="space-y-3">
               <select value={customerId} onChange={e => setCustomerId(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">

@@ -134,7 +134,10 @@ export default function ClienteFormModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <h2 className="font-bold text-slate-900 mb-4">{form.id ? 'Editar cliente' : 'Novo cliente'}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-slate-900">{form.id ? 'Editar cliente' : 'Novo cliente'}</h2>
+          <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
 
         <div className="flex gap-2 mb-4">
           {(['pf', 'pj'] as const).map(t => (

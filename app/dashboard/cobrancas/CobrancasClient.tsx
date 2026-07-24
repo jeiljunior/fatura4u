@@ -164,7 +164,10 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
       {open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="font-bold text-slate-900 mb-4">Nova cobrança</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Nova cobrança</h2>
+              <button onClick={() => setOpen(false)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Faturar para</label>

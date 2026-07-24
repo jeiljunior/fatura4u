@@ -114,7 +114,10 @@ export default function ServicosSection({ initialServicos }: { initialServicos: 
       {form && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-bold text-slate-900 mb-4">{form.id ? 'Editar serviço' : 'Novo serviço'}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900">{form.id ? 'Editar serviço' : 'Novo serviço'}</h3>
+              <button onClick={() => setForm(null)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
             <div className="space-y-3">
               <div>
                 <label className={lbl}>Nome</label>
