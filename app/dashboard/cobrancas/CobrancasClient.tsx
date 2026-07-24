@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ClienteFormModal from '@/components/ClienteFormModal'
+import ClienteFormModal, { Cliente } from '@/components/ClienteFormModal'
+import { maskDocument } from '@/lib/masks'
 
 type Charge = {
   id: string
@@ -40,9 +41,9 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
   const [open, setOpen] = useState(false)
   const [customerId, setCustomerId] = useState('')
   const [customerList, setCustomerList] = useState(customers)
-  const [customerSearch, setCustomerSearch] = useState('')
-  const [showCustomerPicker, setShowCustomerPicker] = useState(false)
-  const [showNovoCliente, setShowNovoCliente] = useState(false)
+  const [terceiroMode, setTerceiroMode] = useState(false)
+  const [terceiroDoc, setTerceiroDoc] = useState('')
+  const [novoTerceiroInitial, setNovoTerceiroInitial] = useState<Cliente | null>(null)
   const [servicoId, setServicoId] = useState('')
   const [valueReais, setValueReais] = useState('')
   const [billingType, setBillingType] = useState('pix')
@@ -62,12 +63,28 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
   }
 
   const selectedCustomer = customerList.find(c => c.id === customerId)
-  const filteredCustomers = customerSearch
-    ? customerList.filter(c =>
-        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        (c.document ?? '').includes(customerSearch.replace(/\D/g, ''))
-      )
-    : customerList
+
+  function handleTerceiroDocChange(value: string) {
+    const masked = maskDocument(value)
+    setTerceiroDoc(masked)
+    const digits = masked.replace(/\D/g, '')
+    if (digits.length !== 11 && digits.length !== 14) { setCustomerId(''); return }
+
+    const found = customerList.find(c => (c.document ?? '').replace(/\D/g, '') === digits)
+    if (found) {
+      setCustomerId(found.id)
+      return
+    }
+
+    // Documento completo e não cadastrado ainda — abre o cadastro já com o
+    // tipo (PF/PJ) e documento preenchidos, só falta completar o resto.
+    setNovoTerceiroInitial({
+      id: '', tipo_pessoa: digits.length === 14 ? 'pj' : 'pf', name: '', document: digits,
+      birth_date: '', inscricao_estadual: '', inscricao_municipal: '', phone: '', email: '',
+      address_zip: '', address_street: '', address_number: '', address_complement: '',
+      address_neighborhood: '', address_city: '', address_state: '', notes: '',
+    })
+  }
 
   async function handleCopyLink(id: string, link: string) {
     await navigator.clipboard.writeText(link)
@@ -94,7 +111,7 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao criar cobrança'); return }
     setOpen(false)
-    setCustomerId(''); setCustomerSearch(''); setServicoId(''); setValueReais(''); setDueDate(''); setDescription('')
+    setCustomerId(''); setTerceiroMode(false); setTerceiroDoc(''); setServicoId(''); setValueReais(''); setDueDate(''); setDescription('')
     router.refresh()
   }
 
@@ -149,44 +166,47 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h2 className="font-bold text-slate-900 mb-4">Nova cobrança</h2>
             <div className="space-y-3">
-              <div className="relative">
+              <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Faturar para</label>
-                {selectedCustomer ? (
-                  <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
-                    <span className="font-medium text-slate-800">{selectedCustomer.name}</span>
-                    <button type="button" onClick={() => { setCustomerId(''); setCustomerSearch('') }}
-                      className="text-xs text-slate-400 hover:text-slate-600">trocar</button>
-                  </div>
-                ) : (
-                  <>
-                    <input
-                      placeholder="Buscar cliente por nome ou documento..."
-                      value={customerSearch}
-                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerPicker(true) }}
-                      onFocus={() => setShowCustomerPicker(true)}
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                    />
-                    {showCustomerPicker && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                        {filteredCustomers.length === 0 && (
-                          <p className="px-3 py-2 text-sm text-slate-400">Nenhum cliente encontrado</p>
-                        )}
-                        {filteredCustomers.map(c => (
-                          <button key={c.id} type="button"
-                            onClick={() => { setCustomerId(c.id); setShowCustomerPicker(false) }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-50 last:border-0">
-                            <span className="font-medium text-slate-800">{c.name}</span>
-                            {c.document && <span className="text-slate-400 ml-2 text-xs">{c.document}</span>}
-                          </button>
-                        ))}
-                        <button type="button"
-                          onClick={() => { setShowCustomerPicker(false); setShowNovoCliente(true) }}
-                          className="w-full text-left px-3 py-2 text-sm text-[var(--brand-primary)] font-semibold hover:bg-blue-50">
-                          + Faturar para um terceiro (novo cliente)
-                        </button>
+                {!terceiroMode && (
+                  <select value={customerId} onChange={e => setCustomerId(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    <option value="">Selecione o cliente</option>
+                    {customerList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                )}
+
+                <label className="flex items-center gap-2 text-sm text-slate-600 mt-2">
+                  <input type="checkbox" checked={terceiroMode} onChange={e => {
+                    const checked = e.target.checked
+                    setTerceiroMode(checked)
+                    setCustomerId('')
+                    setTerceiroDoc('')
+                  }} />
+                  Faturar para um terceiro
+                </label>
+
+                {terceiroMode && (
+                  <div className="mt-2">
+                    {selectedCustomer ? (
+                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
+                        <span className="font-medium text-slate-800">{selectedCustomer.name}</span>
+                        <button type="button" onClick={() => { setCustomerId(''); setTerceiroDoc('') }}
+                          className="text-xs text-slate-400 hover:text-slate-600">trocar</button>
                       </div>
+                    ) : (
+                      <input
+                        placeholder="CPF ou CNPJ do terceiro"
+                        value={terceiroDoc}
+                        maxLength={18}
+                        onChange={e => handleTerceiroDocChange(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                      />
                     )}
-                  </>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Se o documento já estiver cadastrado, seleciona sozinho. Se não, abre o cadastro pra completar.
+                    </p>
+                  </div>
                 )}
               </div>
               {servicos.length > 0 && (
@@ -221,13 +241,14 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
         </div>
       )}
 
-      {showNovoCliente && (
+      {novoTerceiroInitial && (
         <ClienteFormModal
-          onClose={() => setShowNovoCliente(false)}
+          initial={novoTerceiroInitial}
+          onClose={() => { setNovoTerceiroInitial(null); setTerceiroDoc('') }}
           onSaved={c => {
             setCustomerList(list => [...list, { id: c.id, name: c.name, document: c.document }])
             setCustomerId(c.id)
-            setShowNovoCliente(false)
+            setNovoTerceiroInitial(null)
           }}
         />
       )}
