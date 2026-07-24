@@ -332,30 +332,31 @@ export default function ConfiguracoesClient({
         {certError && <p className="text-red-500 text-sm mt-2">{certError}</p>}
       </CollapsibleSection>
 
-      {/* Chave PIX própria (PIX Avulso) */}
-      <CollapsibleSection title="Chave PIX (PIX Avulso)"
-        subtitle={cfg.pix_key ? '✓ Cadastrada' : 'Cadastre pra poder usar o PIX Avulso ao criar cobranças'}>
-        <p className="text-slate-400 text-sm mb-3">
-          Sua chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória). Usada só pra gerar o QR Code/copia-e-cola
-          do PIX Avulso — não passa pelo Asaas nem por nenhum gateway, o dinheiro cai direto na sua conta.
-        </p>
-        <input placeholder="Sua chave PIX" value={cfg.pix_key} onChange={e => setCfg({ ...cfg, pix_key: e.target.value })}
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
-        <button onClick={saveCfg} disabled={savingCfg}
-          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
-          {savingCfg ? 'Salvando...' : 'Salvar chave PIX'}
-        </button>
-      </CollapsibleSection>
-
-      {/* Gateway de pagamento */}
+      {/* Gateway de pagamento + Chave PIX própria (PIX Avulso) */}
       <CollapsibleSection title="Gateway de Pagamentos"
-        subtitle={asaasConnected ? '✓ Conectado' : 'Não conectado — cole a chave de API da sua conta Asaas'}>
+        subtitle={asaasConnected ? '✓ Asaas conectado' : 'Cole a chave de API da sua conta Asaas, ou cadastre sua chave PIX pra usar o PIX Avulso'}>
         <div className="flex flex-col sm:flex-row gap-3">
           <input type="password" placeholder="Chave de API do Asaas" value={asaasKey} onChange={e => setAsaasKey(e.target.value)}
             className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex-1" />
           <button onClick={connectAsaas} disabled={savingGw || !asaasKey}
             className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
             {savingGw ? 'Salvando...' : asaasConnected ? 'Reconectar' : 'Conectar'}
+          </button>
+        </div>
+
+        <div className="border-t border-slate-100 mt-5 pt-5">
+          <p className="font-semibold text-slate-800 text-sm mb-1">
+            Chave PIX própria (PIX Avulso) {cfg.pix_key && <span className="text-emerald-600 font-normal">✓ cadastrada</span>}
+          </p>
+          <p className="text-slate-400 text-sm mb-3">
+            Sua chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória). Usada só pra gerar o QR Code/copia-e-cola
+            do PIX Avulso — não passa pelo Asaas nem por nenhum gateway, o dinheiro cai direto na sua conta.
+          </p>
+          <input placeholder="Sua chave PIX" value={cfg.pix_key} onChange={e => setCfg({ ...cfg, pix_key: e.target.value })}
+            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <button onClick={saveCfg} disabled={savingCfg}
+            className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            {savingCfg ? 'Salvando...' : 'Salvar chave PIX'}
           </button>
         </div>
       </CollapsibleSection>
