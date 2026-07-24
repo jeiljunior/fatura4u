@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest) {
     inscricao_municipal: body.inscricao_municipal ?? null,
     regime_tributario: body.regime_tributario ?? null,
     codigo_servico_padrao: body.codigo_servico_padrao ?? null,
-    aliquota_iss_padrao: body.aliquota_iss_padrao ?? null,
+    aliquota_iss_padrao: body.aliquota_iss_padrao === '' || body.aliquota_iss_padrao == null ? null : body.aliquota_iss_padrao,
     ambiente: body.ambiente ?? 'homologacao',
     municipio_ibge: body.municipio_ibge ?? null,
     serie_dps: body.serie_dps ?? '1',
