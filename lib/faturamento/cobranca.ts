@@ -1,9 +1,11 @@
 // Criação de uma cobrança real no gateway — usado tanto pela rota manual
 // (POST /api/faturamento/charges) quanto pelo motor de recorrência
 // (lib/faturamento/recorrencia.ts), pra nunca duas implementações divergirem.
+import QRCode from 'qrcode'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { getGatewayForBusiness } from '@/lib/faturamento/gateways'
 import { tentarEmitirNotaAutomatica } from '@/lib/faturamento/nfse/emitir-nota'
+import { gerarPixCopiaCola } from '@/lib/faturamento/pix'
 import type { BillingType, Charge } from '@/lib/faturamento/types'
 
 export class CriarCobrancaError extends Error {
@@ -110,21 +112,31 @@ export type CriarCobrancaAvulsaParams = {
   servicoId?: string | null
 }
 
-// PIX Avulso: o tenant recebeu fora do gateway (chave PIX própria) e só
-// registra como já paga — sem QR Code, sem confirmação de webhook. Dispara a
-// emissão automática de nota fiscal na hora (mesmo gatilho que o webhook do
-// gateway usa quando uma cobrança normal é confirmada).
+// PIX Avulso: cobrança fora do gateway, usando a própria chave PIX do
+// tenant (sem depender de Asaas/Mercado Pago). Nasce "pendente" com um QR
+// Code/copia-e-cola de verdade (padrão Banco Central); o tenant marca como
+// recebida manualmente quando o dinheiro cair — é aí que dispara a emissão
+// automática de nota fiscal, se estiver configurada (ver
+// PATCH /api/faturamento/charges/[id]).
 export async function criarCobrancaAvulsa(params: CriarCobrancaAvulsaParams): Promise<Charge> {
-  const { data: customer } = await supabaseAdmin
-    .from('customers')
-    .select('id')
-    .eq('id', params.customerId)
-    .eq('business_id', params.businessId)
-    .single()
+  const [{ data: customer }, { data: config }, { data: business }] = await Promise.all([
+    supabaseAdmin.from('customers').select('id').eq('id', params.customerId).eq('business_id', params.businessId).single(),
+    supabaseAdmin.from('faturamento_config').select('pix_key').eq('business_id', params.businessId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('name, razao_social, address_city').eq('id', params.businessId).single(),
+  ])
 
   if (!customer) throw new CriarCobrancaError('Cliente não encontrado', 404)
+  if (!config?.pix_key) {
+    throw new CriarCobrancaError('Cadastre sua chave PIX em Configurações antes de usar o PIX Avulso', 400)
+  }
 
-  const agora = new Date().toISOString()
+  const copiaECola = gerarPixCopiaCola({
+    chave: config.pix_key,
+    nomeRecebedor: business?.razao_social || business?.name || 'Recebedor',
+    cidadeRecebedor: business?.address_city || 'BRASIL',
+    valorCents: params.valueCents,
+  })
+  const qrCodeDataUrl = await QRCode.toDataURL(copiaECola, { margin: 1, width: 300 })
 
   const { data: charge, error } = await supabaseAdmin
     .from('charges')
@@ -135,17 +147,36 @@ export async function criarCobrancaAvulsa(params: CriarCobrancaAvulsaParams): Pr
       provider_charge_id: null,
       valor_cents: params.valueCents,
       billing_type: 'pix_avulso',
-      status: 'recebida',
-      due_date: params.dueDate ?? agora.slice(0, 10),
-      paid_at: agora,
+      status: 'pendente',
+      due_date: params.dueDate ?? null,
+      pix_qr_code: qrCodeDataUrl,
+      pix_payload: copiaECola,
       servico_id: params.servicoId ?? null,
     })
     .select()
     .single()
 
   if (error) throw new CriarCobrancaError(error.message, 500)
+  return charge as Charge
+}
 
-  await tentarEmitirNotaAutomatica(params.businessId, charge.id)
+// Confirma manualmente que uma cobrança "manual" (PIX Avulso) foi recebida —
+// não existe webhook pra isso, então é o próprio tenant que avisa. Dispara a
+// emissão automática de nota fiscal, se configurada (mesmo gatilho que o
+// webhook do gateway usa quando uma cobrança normal é confirmada).
+export async function marcarCobrancaManualComoRecebida(businessId: string, chargeId: string): Promise<Charge> {
+  const { data: charge, error } = await supabaseAdmin
+    .from('charges')
+    .update({ status: 'recebida', paid_at: new Date().toISOString() })
+    .eq('id', chargeId)
+    .eq('business_id', businessId)
+    .eq('provider', 'manual')
+    .select()
+    .single()
+
+  if (error || !charge) throw new CriarCobrancaError('Cobrança não encontrada', 404)
+
+  await tentarEmitirNotaAutomatica(businessId, charge.id)
 
   return charge as Charge
 }

@@ -54,6 +54,7 @@ export async function PUT(req: NextRequest) {
     regua_msg_antes: body.regua_msg_antes ?? null,
     regua_msg_hoje: body.regua_msg_hoje ?? null,
     regua_msg_atraso: body.regua_msg_atraso ?? null,
+    pix_key: body.pix_key || null,
     active: body.active ?? true,
   }
 

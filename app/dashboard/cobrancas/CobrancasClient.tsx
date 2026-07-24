@@ -8,9 +8,11 @@ type Charge = {
   id: string
   valor_cents: number
   billing_type: string | null
+  provider: string | null
   status: string
   due_date: string | null
   pix_qr_code: string | null
+  pix_payload: string | null
   boleto_url: string | null
   payment_link: string | null
   customers: { name: string } | { name: string }[] | null
@@ -52,6 +54,8 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState('')
+  const [pixModalCharge, setPixModalCharge] = useState<Charge | null>(null)
+  const [marcandoId, setMarcandoId] = useState('')
 
   function handleSelectServico(id: string) {
     setServicoId(id)
@@ -92,6 +96,18 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
     setTimeout(() => setCopiedId(''), 2000)
   }
 
+  async function handleMarcarRecebida(id: string) {
+    setMarcandoId(id)
+    await fetch(`/api/faturamento/charges/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'recebida' }),
+    })
+    setMarcandoId('')
+    setPixModalCharge(null)
+    router.refresh()
+  }
+
   async function handleCreate() {
     setSaving(true)
     setError('')
@@ -111,6 +127,7 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao criar cobrança'); return }
     setOpen(false)
+    if (billingType === 'pix_avulso' && data.charge?.pix_qr_code) setPixModalCharge(data.charge)
     setCustomerId(''); setTerceiroMode(false); setTerceiroDoc(''); setServicoId(''); setValueReais(''); setDueDate(''); setDescription('')
     router.refresh()
   }
@@ -132,11 +149,12 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Vencimento</th>
               <th className="px-4 py-3 font-semibold">Link</th>
+              <th className="px-4 py-3 font-semibold"></th>
             </tr>
           </thead>
           <tbody>
             {initialCharges.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhuma cobrança ainda</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhuma cobrança ainda</td></tr>
             )}
             {initialCharges.map(c => (
               <tr key={c.id} className="border-t border-slate-100">
@@ -153,7 +171,20 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
                       className="text-blue-600 hover:text-blue-700 text-xs font-semibold">
                       {copiedId === c.id ? 'Copiado!' : 'Copiar link'}
                     </button>
+                  ) : c.pix_qr_code ? (
+                    <button onClick={() => setPixModalCharge(c)}
+                      className="text-blue-600 hover:text-blue-700 text-xs font-semibold">
+                      Ver PIX
+                    </button>
                   ) : '—'}
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  {c.provider === 'manual' && c.status === 'pendente' && (
+                    <button onClick={() => handleMarcarRecebida(c.id)} disabled={marcandoId === c.id}
+                      className="text-emerald-600 hover:text-emerald-700 text-xs font-semibold disabled:opacity-50">
+                      {marcandoId === c.id ? 'Marcando...' : 'Marcar como recebida'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -230,8 +261,9 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
               </select>
               {billingType === 'pix_avulso' ? (
                 <p className="text-xs text-slate-400">
-                  Registrada direto como recebida hoje, sem QR Code — use quando já recebeu por fora (chave PIX própria).
-                  Emite nota automaticamente se essa opção estiver ativa em Configurações.
+                  Gera um QR Code/copia-e-cola com a sua chave PIX (cadastrada em Configurações), sem passar por
+                  gateway. Fica pendente até você marcar como recebida — aí dispara a nota fiscal automaticamente,
+                  se essa opção estiver ativa em Configurações.
                 </p>
               ) : (
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
@@ -248,6 +280,36 @@ export default function CobrancasClient({ initialCharges, customers, servicos }:
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pixModalCharge && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">PIX Avulso</h2>
+              <button onClick={() => setPixModalCharge(null)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-slate-500 text-sm mb-3">{fmt(pixModalCharge.valor_cents)} — escaneie ou copie o código no seu app do banco</p>
+            {pixModalCharge.pix_qr_code && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={pixModalCharge.pix_qr_code} alt="QR Code PIX" className="w-56 h-56 mx-auto rounded-xl border border-slate-200" />
+            )}
+            {pixModalCharge.pix_payload && (
+              <button
+                onClick={() => handleCopyLink(pixModalCharge.id, pixModalCharge.pix_payload!)}
+                className="mt-4 w-full bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition"
+              >
+                {copiedId === pixModalCharge.id ? 'Copiado!' : '📋 Copiar código PIX'}
+              </button>
+            )}
+            {pixModalCharge.provider === 'manual' && pixModalCharge.status === 'pendente' && (
+              <button onClick={() => handleMarcarRecebida(pixModalCharge.id)} disabled={marcandoId === pixModalCharge.id}
+                className="mt-2 w-full text-emerald-600 hover:text-emerald-700 text-sm font-semibold px-4 py-2 disabled:opacity-50">
+                {marcandoId === pixModalCharge.id ? 'Marcando...' : '✓ Já recebi — marcar como paga'}
+              </button>
+            )}
           </div>
         </div>
       )}

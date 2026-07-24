@@ -38,6 +38,7 @@ type Config = {
   regua_msg_antes: string | null
   regua_msg_hoje: string | null
   regua_msg_atraso: string | null
+  pix_key: string | null
 } | null
 
 type Certificado = { valido_ate: string | null } | null
@@ -134,6 +135,7 @@ export default function ConfiguracoesClient({
     regua_msg_antes: config?.regua_msg_antes ?? DEFAULT_MSG_ANTES,
     regua_msg_hoje: config?.regua_msg_hoje ?? DEFAULT_MSG_HOJE,
     regua_msg_atraso: config?.regua_msg_atraso ?? DEFAULT_MSG_ATRASO,
+    pix_key: config?.pix_key ?? '',
   })
   const [savingCfg, setSavingCfg] = useState(false)
 
@@ -328,6 +330,21 @@ export default function ConfiguracoesClient({
           </button>
         </div>
         {certError && <p className="text-red-500 text-sm mt-2">{certError}</p>}
+      </CollapsibleSection>
+
+      {/* Chave PIX própria (PIX Avulso) */}
+      <CollapsibleSection title="Chave PIX (PIX Avulso)"
+        subtitle={cfg.pix_key ? '✓ Cadastrada' : 'Cadastre pra poder usar o PIX Avulso ao criar cobranças'}>
+        <p className="text-slate-400 text-sm mb-3">
+          Sua chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória). Usada só pra gerar o QR Code/copia-e-cola
+          do PIX Avulso — não passa pelo Asaas nem por nenhum gateway, o dinheiro cai direto na sua conta.
+        </p>
+        <input placeholder="Sua chave PIX" value={cfg.pix_key} onChange={e => setCfg({ ...cfg, pix_key: e.target.value })}
+          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+        <button onClick={saveCfg} disabled={savingCfg}
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          {savingCfg ? 'Salvando...' : 'Salvar chave PIX'}
+        </button>
       </CollapsibleSection>
 
       {/* Gateway de pagamento */}
