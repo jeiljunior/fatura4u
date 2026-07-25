@@ -5,6 +5,7 @@ import supabaseAdmin from '@/lib/supabase/admin'
 import ImpersonateButton from './ImpersonateButton'
 import DeleteTenantButton from './DeleteTenantButton'
 import WhatsappConfigAdmin from './WhatsappConfigAdmin'
+import { maskCPF, maskCNPJ } from '@/lib/masks'
 
 const CHARGE_STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente', confirmada: 'Confirmada', recebida: 'Recebida', vencida: 'Vencida', cancelada: 'Cancelada',
@@ -145,7 +146,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
               <dl className="space-y-3">
                 <Row label="Nome" value={biz.name} />
                 <Row label="Slug" value={biz.slug ?? '—'} mono />
-                {biz.document_number && <Row label={biz.document_type === 'cnpj' ? 'CNPJ' : 'CPF'} value={biz.document_number} mono />}
+                {biz.document_number && <Row label={biz.document_type === 'cnpj' ? 'CNPJ' : 'CPF'} value={biz.document_type === 'cnpj' ? maskCNPJ(biz.document_number) : maskCPF(biz.document_number)} mono />}
                 {biz.razao_social && <Row label="Razão Social" value={biz.razao_social} />}
                 {biz.address_city && <Row label="Cidade/UF" value={`${biz.address_city}${biz.address_state ? ' / ' + biz.address_state : ''}`} />}
                 <Row label="Cadastrado em" value={new Date(biz.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} />

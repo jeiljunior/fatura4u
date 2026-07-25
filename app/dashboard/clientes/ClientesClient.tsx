@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ClienteFormModal, { Cliente } from '@/components/ClienteFormModal'
+import { maskCPF, maskCNPJ, maskPhone } from '@/lib/masks'
 
 export default function ClientesClient({ initialCustomers }: { initialCustomers: Cliente[] }) {
   const router = useRouter()
@@ -47,8 +48,8 @@ export default function ClientesClient({ initialCustomers }: { initialCustomers:
               <tr key={c.id} className="border-t border-slate-100">
                 <td className="px-4 py-3 text-slate-500 text-xs font-semibold uppercase">{c.tipo_pessoa === 'pj' ? 'PJ' : 'PF'}</td>
                 <td className="px-4 py-3 font-medium text-slate-800">{c.name}</td>
-                <td className="px-4 py-3 text-slate-500">{c.document ?? '—'}</td>
-                <td className="px-4 py-3 text-slate-500">{c.phone ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-500">{c.document ? (c.tipo_pessoa === 'pj' ? maskCNPJ(c.document) : maskCPF(c.document)) : '—'}</td>
+                <td className="px-4 py-3 text-slate-500">{c.phone ? maskPhone(c.phone) : '—'}</td>
                 <td className="px-4 py-3 text-slate-500">{c.email ?? '—'}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => { setForm(c); setShowForm(true) }} className="text-blue-600 hover:underline mr-3">Editar</button>
