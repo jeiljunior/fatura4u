@@ -2,17 +2,23 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
+import { buscarSaldoProjetado } from '@/lib/financeiro/saldoProjetado'
+import SaldoProjetadoCard from '@/components/SaldoProjetadoCard'
 
 export default async function DashboardHome() {
   const effective = await getEffectiveBusinessId()
   if (!effective) redirect('/login')
   const businessId = effective.businessId
 
-  const [{ count: totalClientes }, { count: cobrancasPendentes }, { count: notasEmitidas }] = await Promise.all([
+  const [{ count: totalClientes }, { count: cobrancasPendentes }, { count: notasEmitidas }, { data: business }] = await Promise.all([
     supabaseAdmin.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', businessId),
     supabaseAdmin.from('charges').select('*', { count: 'exact', head: true }).eq('business_id', businessId).eq('status', 'pendente'),
     supabaseAdmin.from('invoices').select('*', { count: 'exact', head: true }).eq('business_id', businessId).eq('status', 'autorizada'),
+    supabaseAdmin.from('businesses').select('saldo_caixa_cents').eq('id', businessId).single(),
   ])
+
+  const saldoAtualCents = business?.saldo_caixa_cents ?? 0
+  const saldoProjetado30 = await buscarSaldoProjetado(supabaseAdmin, businessId, saldoAtualCents, 30)
 
   const cards = [
     { label: 'Clientes cadastrados', value: totalClientes ?? 0, href: '/dashboard/clientes', icon: '👥' },
@@ -34,6 +40,14 @@ export default async function DashboardHome() {
             <p className="text-slate-400 text-sm">{c.label}</p>
           </Link>
         ))}
+        <SaldoProjetadoCard
+          data={{
+            saldoAtualCents,
+            saldoProjetadoCents: saldoProjetado30.saldoProjetadoCents,
+            negativo: saldoProjetado30.negativo,
+            dias: 30,
+          }}
+        />
       </div>
     </main>
   )
