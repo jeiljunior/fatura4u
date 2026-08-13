@@ -18,7 +18,9 @@ export default async function DashboardHome() {
   ])
 
   const saldoAtualCents = business?.saldo_caixa_cents ?? 0
-  const saldoProjetado30 = await buscarSaldoProjetado(supabaseAdmin, businessId, saldoAtualCents, 30)
+  const [projecao7, projecao15, projecao30] = await Promise.all(
+    [7, 15, 30].map(dias => buscarSaldoProjetado(supabaseAdmin, businessId, saldoAtualCents, dias))
+  )
 
   const cards = [
     { label: 'Clientes cadastrados', value: totalClientes ?? 0, href: '/dashboard/clientes', icon: '👥' },
@@ -43,9 +45,11 @@ export default async function DashboardHome() {
         <SaldoProjetadoCard
           data={{
             saldoAtualCents,
-            saldoProjetadoCents: saldoProjetado30.saldoProjetadoCents,
-            negativo: saldoProjetado30.negativo,
-            dias: 30,
+            projecoes: {
+              7: { saldoProjetadoCents: projecao7.saldoProjetadoCents, negativo: projecao7.negativo },
+              15: { saldoProjetadoCents: projecao15.saldoProjetadoCents, negativo: projecao15.negativo },
+              30: { saldoProjetadoCents: projecao30.saldoProjetadoCents, negativo: projecao30.negativo },
+            },
           }}
         />
       </div>

@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export type JanelaDias = 7 | 15 | 30
 
 export type SaldoProjetadoData = {
   saldoAtualCents: number
-  saldoProjetadoCents: number
-  negativo: boolean
-  dias: number
+  projecoes: Record<JanelaDias, { saldoProjetadoCents: number; negativo: boolean }>
 }
+
+const JANELAS: JanelaDias[] = [7, 15, 30]
 
 function formatMoney(cents: number) {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -16,9 +19,12 @@ function formatMoney(cents: number) {
 
 export default function SaldoProjetadoCard({ data }: { data: SaldoProjetadoData }) {
   const router = useRouter()
+  const [dias, setDias] = useState<JanelaDias>(30)
   const [editing, setEditing] = useState(false)
   const [valor, setValor] = useState(() => (data.saldoAtualCents / 100).toFixed(2).replace('.', ','))
   const [saving, setSaving] = useState(false)
+
+  const projecao = data.projecoes[dias]
 
   async function handleSave() {
     const cents = Math.round(parseFloat(valor.replace(',', '.')) * 100)
@@ -35,13 +41,27 @@ export default function SaldoProjetadoCard({ data }: { data: SaldoProjetadoData 
   }
 
   return (
-    <div className={`rounded-2xl border p-5 ${data.negativo ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
-      <div className="text-2xl mb-2">🔮</div>
-      <p className={`text-2xl font-black ${data.negativo ? 'text-red-700' : 'text-slate-900'}`}>
-        {formatMoney(data.saldoProjetadoCents)}
+    <div className={`rounded-2xl border p-5 ${projecao.negativo ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-2xl">🔮</div>
+        <div className="flex gap-1">
+          {JANELAS.map(j => (
+            <button
+              key={j}
+              type="button"
+              onClick={e => { e.stopPropagation(); setDias(j) }}
+              className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${dias === j ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              {j}d
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className={`text-2xl font-black ${projecao.negativo ? 'text-red-700' : 'text-slate-900'}`}>
+        {formatMoney(projecao.saldoProjetadoCents)}
       </p>
-      <p className="text-slate-400 text-sm">Saldo projetado em {data.dias} dias</p>
-      {data.negativo && (
+      <p className="text-slate-400 text-sm">Saldo projetado em {dias} dias</p>
+      {projecao.negativo && (
         <p className="text-red-600 text-xs font-semibold mt-1">⚠️ Fica negativo nesse período</p>
       )}
 
@@ -61,13 +81,18 @@ export default function SaldoProjetadoCard({ data }: { data: SaldoProjetadoData 
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={e => { e.stopPropagation(); setEditing(true) }}
-          className="text-blue-600 text-xs font-semibold hover:underline mt-3 text-left"
-        >
-          Saldo em caixa: {formatMoney(data.saldoAtualCents)} · editar
-        </button>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); setEditing(true) }}
+            className="text-blue-600 text-xs font-semibold hover:underline text-left"
+          >
+            Saldo em caixa: {formatMoney(data.saldoAtualCents)} · editar
+          </button>
+          <Link href="/dashboard/futuro" onClick={e => e.stopPropagation()} className="text-slate-400 text-xs font-semibold hover:text-slate-600 shrink-0">
+            Ver linha do tempo →
+          </Link>
+        </div>
       )}
     </div>
   )
