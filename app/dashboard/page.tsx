@@ -30,16 +30,16 @@ export default async function DashboardHome() {
 
   return (
     <main className="min-h-screen">
-      <div className="bg-white border-b border-slate-200 px-6 py-5">
-        <h1 className="text-xl font-bold text-slate-900">Início</h1>
+      <div className="bg-card border-b border-border px-6 py-5">
+        <h1 className="text-xl font-bold text-foreground">Início</h1>
       </div>
       <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map(c => (
           <Link key={c.href} href={c.href}
-            className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 transition">
+            className="bg-card border border-border rounded-2xl p-5 hover:border-blue-300 dark:hover:border-blue-800 transition">
             <div className="text-2xl mb-2">{c.icon}</div>
-            <p className="text-2xl font-black text-slate-900">{c.value}</p>
-            <p className="text-slate-400 text-sm">{c.label}</p>
+            <p className="text-2xl font-black text-foreground">{c.value}</p>
+            <p className="text-muted-foreground text-sm">{c.label}</p>
           </Link>
         ))}
         <SaldoProjetadoCard

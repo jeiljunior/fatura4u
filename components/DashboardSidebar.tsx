@@ -1,6 +1,7 @@
 'use client'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useTheme } from '@/lib/theme'
 
 const NAV = [
   { label: 'Início',       href: '/dashboard',             icon: '🏠' },
@@ -24,9 +25,10 @@ export default function DashboardSidebar({
   children?: React.ReactNode
 }) {
   const pathname = usePathname()
+  const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="flex min-h-screen bg-slate-50" style={{ '--brand-primary': brandColor || '#2563eb' } as React.CSSProperties}>
+    <div className="flex min-h-screen bg-background" style={{ '--brand-primary': brandColor || '#2563eb' } as React.CSSProperties}>
       <aside className="w-60 hidden md:flex flex-col fixed top-0 left-0 h-full bg-slate-900 z-20">
         <div className="px-4 py-5 border-b border-white/10">
           {logoUrl ? (
@@ -67,6 +69,14 @@ export default function DashboardSidebar({
         </nav>
 
         <div className="px-3 pb-4">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-between px-3 text-slate-400 text-sm py-2 hover:bg-white/10 rounded-lg transition"
+          >
+            <span>{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>
+            <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+          </button>
           <form action="/auth/logout" method="post">
             <button className="w-full text-slate-400 text-sm py-2 hover:bg-white/10 rounded-lg transition">
               Sair
