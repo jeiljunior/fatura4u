@@ -49,6 +49,13 @@ export async function PUT(req: NextRequest) {
     serie_dps: body.serie_dps ?? '1',
     codigo_nbs: body.codigo_nbs ?? null,
     emissao_automatica: body.emissao_automatica ?? false,
+    // NF-e/NFC-e (nota de produto) — csc_id/csc_token têm rota própria
+    // (/api/faturamento/csc), não entram aqui pra nunca sobrescrever o token
+    // cifrado sem querer num salvamento de outro campo qualquer.
+    uf: body.uf || null,
+    inscricao_estadual: body.inscricao_estadual || null,
+    serie_nfe: body.serie_nfe ?? '1',
+    serie_nfce: body.serie_nfce ?? '1',
     regua_whatsapp_ativa: body.regua_whatsapp_ativa ?? true,
     regua_email_ativa: body.regua_email_ativa ?? true,
     regua_msg_antes: body.regua_msg_antes ?? null,

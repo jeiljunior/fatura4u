@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ServicosSection, { Servico } from '@/components/ServicosSection'
+import ContasPagarModelosSection from '@/components/ContasPagarModelosSection'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import { maskCPF, maskCNPJ, maskCEP } from '@/lib/masks'
 
@@ -39,6 +40,10 @@ type Config = {
   regua_msg_hoje: string | null
   regua_msg_atraso: string | null
   pix_key: string | null
+  uf: string | null
+  inscricao_estadual: string | null
+  serie_nfe: string
+  serie_nfce: string
 } | null
 
 type Certificado = { valido_ate: string | null } | null
@@ -136,6 +141,10 @@ export default function ConfiguracoesClient({
     regua_msg_hoje: config?.regua_msg_hoje ?? DEFAULT_MSG_HOJE,
     regua_msg_atraso: config?.regua_msg_atraso ?? DEFAULT_MSG_ATRASO,
     pix_key: config?.pix_key ?? '',
+    uf: config?.uf ?? business?.address_state ?? '',
+    inscricao_estadual: config?.inscricao_estadual ?? '',
+    serie_nfe: config?.serie_nfe ?? '1',
+    serie_nfce: config?.serie_nfce ?? '1',
   })
   const [savingCfg, setSavingCfg] = useState(false)
 
@@ -143,6 +152,28 @@ export default function ConfiguracoesClient({
     setSavingCfg(true)
     await fetch('/api/faturamento/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg) })
     setSavingCfg(false)
+    router.refresh()
+  }
+
+  // ── CSC (NFC-e) — rota própria pra nunca sobrescrever o token cifrado
+  // sem querer ao salvar outro campo qualquer da config geral ──────
+  const [cscId, setCscId] = useState('')
+  const [cscToken, setCscToken] = useState('')
+  const [savingCsc, setSavingCsc] = useState(false)
+  const [cscError, setCscError] = useState('')
+
+  async function saveCsc() {
+    if (!cscId || !cscToken) { setCscError('Informe o ID e o token do CSC'); return }
+    setSavingCsc(true)
+    setCscError('')
+    const res = await fetch('/api/faturamento/csc', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cscId, cscToken }),
+    })
+    const data = await res.json()
+    setSavingCsc(false)
+    if (!res.ok) { setCscError(data.error ?? 'Erro ao salvar CSC'); return }
+    setCscToken('')
     router.refresh()
   }
 
@@ -314,7 +345,54 @@ export default function ConfiguracoesClient({
         </button>
       </CollapsibleSection>
 
+      {/* Config fiscal — NF-e/NFC-e (nota de produto) */}
+      <CollapsibleSection title="Configuração fiscal (NF-e/NFC-e — produtos)"
+        subtitle="Usa o mesmo certificado digital já cadastrado acima — não precisa subir de novo.">
+        <div className="grid grid-cols-2 gap-3">
+          <select value={cfg.uf} onChange={e => setCfg({ ...cfg, uf: e.target.value })}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            <option value="">Selecione o estado (UF)</option>
+            <option value="PR">Paraná (PR)</option>
+            <option value="SC">Santa Catarina (SC) — ainda não habilitado</option>
+            <option value="SP">São Paulo (SP) — ainda não habilitado</option>
+            <option value="RS">Rio Grande do Sul (RS) — ainda não habilitado</option>
+            <option value="RJ">Rio de Janeiro (RJ) — ainda não habilitado</option>
+          </select>
+          <input placeholder="Inscrição Estadual" value={cfg.inscricao_estadual} onChange={e => setCfg({ ...cfg, inscricao_estadual: e.target.value })}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input placeholder="Série da NF-e" value={cfg.serie_nfe} onChange={e => setCfg({ ...cfg, serie_nfe: e.target.value })}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input placeholder="Série da NFC-e" value={cfg.serie_nfce} onChange={e => setCfg({ ...cfg, serie_nfce: e.target.value })}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+        </div>
+        <button onClick={saveCfg} disabled={savingCfg}
+          className="mt-4 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+          {savingCfg ? 'Salvando...' : 'Salvar configuração fiscal'}
+        </button>
+
+        <div className="mt-6 pt-5 border-t border-slate-100">
+          <p className="text-sm font-semibold text-slate-700 mb-1">CSC (Código de Segurança do Contribuinte)</p>
+          <p className="text-xs text-slate-400 mb-3">Só necessário pra NFC-e (QR Code). Obtenha direto no portal da SEFAZ do seu estado — cole aqui uma vez, o token fica cifrado.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="ID do CSC" value={cscId} onChange={e => setCscId(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            <input placeholder="Token do CSC" type="password" value={cscToken} onChange={e => setCscToken(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          </div>
+          {cscError && <p className="text-red-500 text-sm mt-2">{cscError}</p>}
+          <button onClick={saveCsc} disabled={savingCsc}
+            className="mt-3 bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+            {savingCsc ? 'Salvando...' : 'Salvar CSC'}
+          </button>
+        </div>
+      </CollapsibleSection>
+
       <ServicosSection initialServicos={servicos} />
+
+      <CollapsibleSection title="Modelos de conta a pagar"
+        subtitle="Despesas recorrentes pra selecionar rápido ao lançar uma nova conta a pagar">
+        <ContasPagarModelosSection />
+      </CollapsibleSection>
 
       {/* Certificado digital */}
       <CollapsibleSection title="Certificado digital A1"

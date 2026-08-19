@@ -8,6 +8,8 @@ const NAV = [
   { label: 'Clientes',     href: '/dashboard/clientes',     icon: '👥' },
   { label: 'Cobranças',    href: '/dashboard/cobrancas',    icon: '💲' },
   { label: 'Notas Fiscais', href: '/dashboard/notas',       icon: '🧾' },
+  { label: 'Produtos',     href: '/dashboard/produtos',     icon: '📦' },
+  { label: 'Notas de Produto', href: '/dashboard/notas-produto', icon: '🧾' },
   { label: 'Contas a pagar', href: '/dashboard/contas-a-pagar', icon: '📉' },
 ]
 
