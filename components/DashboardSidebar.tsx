@@ -36,7 +36,7 @@ export default function DashboardSidebar({
           {logoUrl ? (
             <img src={logoUrl} alt={businessName} className="h-8 max-w-full object-contain" />
           ) : (
-            <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" className="w-[104px] max-w-full h-auto" />
+            <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 28, width: 'auto' }} />
           )}
         </div>
 
