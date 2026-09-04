@@ -54,7 +54,13 @@ export function resolverHost(uf: string, modelo: Modelo, ambiente: NfeAmbiente):
   return porUf[modelo][ambiente]
 }
 
-export type NfeCertificado = { pfxBuffer: Buffer; senha: string }
+// PEM (não pfx+senha bruto) — mesma correção de lib/faturamento/nfse/mtls-client.ts:
+// Node 24/OpenSSL 3.x recusa muitos .pfx reais ("Unsupported PKCS12 PFX data")
+// porque o provider "legacy" do OpenSSL não vem habilitado por padrão.
+// node-forge (certificado.ts) lê o .pfx sem depender do OpenSSL do sistema,
+// então extraímos cert/chave em PEM uma vez e nunca passamos o .pfx bruto
+// pro https.request nativo.
+export type NfeCertificado = { certPem: string; chavePem: string }
 
 export type SoapResponse = { status: number; body: string }
 
@@ -92,8 +98,8 @@ export function soapRequest(params: {
         host,
         path,
         method: 'POST',
-        pfx: params.certificado.pfxBuffer,
-        passphrase: params.certificado.senha,
+        cert: params.certificado.certPem,
+        key: params.certificado.chavePem,
         headers,
         timeout: 20000,
       },

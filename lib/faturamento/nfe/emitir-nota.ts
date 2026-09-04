@@ -223,7 +223,7 @@ export async function emitirNotaProduto(params: EmitirNotaProdutoParams) {
       uf: config.uf,
       modelo,
       ambiente: config.ambiente as NfeAmbiente,
-      certificado: { pfxBuffer, senha },
+      certificado: { certPem, chavePem },
     })
 
     // Processamento assíncrono — poucas tentativas de poll antes de deixar
@@ -239,7 +239,7 @@ export async function emitirNotaProduto(params: EmitirNotaProdutoParams) {
           uf: config.uf,
           modelo,
           ambiente: config.ambiente as NfeAmbiente,
-          certificado: { pfxBuffer, senha },
+          certificado: { certPem, chavePem },
         })
       }
     }

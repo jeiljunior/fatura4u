@@ -55,6 +55,13 @@ function formatarIM(im: string): string {
   return im.split('-')[0].replace(/\D/g, '')
 }
 
+// cNBS (TSCodNBS) exige só dígitos — confirmado em teste real que o cadastro
+// costuma vir no formato legível "X.XXXX.XX.XX" (com pontos), que o schema
+// da Sefin Nacional rejeita (E1235, Pattern constraint). Descarta os pontos.
+function formatarNbs(nbs: string): string {
+  return nbs.replace(/\D/g, '')
+}
+
 // opSimpNac: 1=Não optante, 2=Optante MEI, 3=Optante Simples (exceto MEI) — conferir com contador
 const REGIME_TO_OPSIMPNAC: Record<DpsInput['prestador']['regime'], { opSimpNac: number; regEspTrib: number }> = {
   mei: { opSimpNac: 2, regEspTrib: 0 },
@@ -122,7 +129,7 @@ export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
       <cServ>
         <cTribNac>${esc(input.servico.codigoTribNac)}</cTribNac>
         <xDescServ>${esc(input.servico.descricao)}</xDescServ>
-        <cNBS>${esc(input.servico.codigoNbs)}</cNBS>
+        <cNBS>${esc(formatarNbs(input.servico.codigoNbs))}</cNBS>
       </cServ>
     </serv>
     <valores>

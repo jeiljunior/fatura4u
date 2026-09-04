@@ -124,7 +124,7 @@ export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
     const { chavePem, certPem } = extrairChaveECertificado(pfxBuffer, senha)
     const signedXml = assinarDpsXml(xml, id, chavePem, certPem)
 
-    const resultado = await emitirDps(signedXml, { pfxBuffer, senha }, config.ambiente as NfseAmbiente)
+    const resultado = await emitirDps(signedXml, { certPem, chavePem }, config.ambiente as NfseAmbiente)
 
     const status: InvoiceStatus = resultado.erros.length > 0
       ? 'rejeitada'

@@ -21,7 +21,16 @@ const HOSTS: Record<NfseModulo, Record<NfseAmbiente, string>> = {
   },
 }
 
-export type NfseCertificado = { pfxBuffer: Buffer; senha: string }
+// PEM (não pfx+senha bruto) — Node 24 / OpenSSL 3.x recusa muitos .pfx reais
+// (erro "Unsupported PKCS12 PFX data" / ERR_CRYPTO_UNSUPPORTED_OPERATION)
+// porque o provider "legacy" do OpenSSL (necessário pra alguns esquemas de
+// cifra de PKCS12 mais antigos, comuns em certificados ICP-Brasil) não vem
+// habilitado por padrão. node-forge (usado em certificado.ts) não depende
+// do OpenSSL do sistema e consegue ler esses .pfx sem problema — então
+// extraímos a chave/certificado em PEM uma vez (extrairChaveECertificado) e
+// usamos isso tanto pra assinar o XML quanto pro mTLS, nunca passando o
+// .pfx bruto pro https.request nativo.
+export type NfseCertificado = { certPem: string; chavePem: string }
 
 export type NfseResponse = { status: number; body: string; bodyBuffer: Buffer }
 
@@ -42,8 +51,8 @@ export function nfseRequest(params: {
         host: HOSTS[params.modulo ?? 'adn'][params.ambiente],
         path: params.path,
         method: params.method ?? 'GET',
-        pfx: params.certificado.pfxBuffer,
-        passphrase: params.certificado.senha,
+        cert: params.certificado.certPem,
+        key: params.certificado.chavePem,
         headers: bodyBuffer
           ? {
               'Content-Type': params.contentType ?? 'application/xml',

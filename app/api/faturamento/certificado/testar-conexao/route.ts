@@ -3,6 +3,7 @@ import supabaseAdmin from '@/lib/supabase/admin'
 import { decryptJSON } from '@/lib/faturamento/crypto'
 import { testarConexaoAdn } from '@/lib/faturamento/nfse/mtls-client'
 import type { NfseAmbiente } from '@/lib/faturamento/nfse/mtls-client'
+import { extrairChaveECertificado } from '@/lib/faturamento/nfse/certificado'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 async function getBusinessId() {
@@ -24,7 +25,8 @@ export async function POST() {
   const pfxBuffer = Buffer.from(pfxBase64, 'base64')
 
   try {
-    const res = await testarConexaoAdn({ pfxBuffer, senha }, (config?.ambiente ?? 'homologacao') as NfseAmbiente)
+    const { chavePem, certPem } = extrairChaveECertificado(pfxBuffer, senha)
+    const res = await testarConexaoAdn({ certPem, chavePem }, (config?.ambiente ?? 'homologacao') as NfseAmbiente)
     const ok = res.status === 200
     return NextResponse.json({ ok, status: res.status })
   } catch (e) {

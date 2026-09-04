@@ -3,6 +3,7 @@ import supabaseAdmin from '@/lib/supabase/admin'
 import { decryptJSON } from '@/lib/faturamento/crypto'
 import { nfseRequest } from '@/lib/faturamento/nfse/mtls-client'
 import type { NfseAmbiente } from '@/lib/faturamento/nfse/mtls-client'
+import { extrairChaveECertificado } from '@/lib/faturamento/nfse/certificado'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 
 // GET /api/faturamento/invoices/[id]/danfse — proxy: busca o PDF do DANFSe na
@@ -25,12 +26,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { pfxBase64, senha } = decryptJSON<{ pfxBase64: string; senha: string }>((certRow.pfx as { enc: string }).enc)
   const ambiente = (config?.ambiente as NfseAmbiente) ?? 'homologacao'
+  const { chavePem, certPem } = extrairChaveECertificado(Buffer.from(pfxBase64, 'base64'), senha)
 
   const res = await nfseRequest({
     ambiente,
     path: `/danfse/${invoice.chave_acesso}`,
     method: 'GET',
-    certificado: { pfxBuffer: Buffer.from(pfxBase64, 'base64'), senha },
+    certificado: { certPem, chavePem },
   })
 
   if (res.status !== 200) {
