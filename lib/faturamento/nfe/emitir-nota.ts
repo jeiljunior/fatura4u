@@ -17,6 +17,7 @@ import { montarNfeXml } from './nfe-xml'
 import type { NfeDestInput, NfeItemInput } from './nfe-xml'
 import { assinarNfeXml } from './assinar'
 import { enviarLoteNfe, consultarRecibo } from './emitir'
+import { montarEventoCancelamentoXml, assinarEventoCancelamentoXml, enviarCancelamentoNfe } from './cancelar'
 import type { Modelo, NfeAmbiente } from './soap-client'
 import type { NotaProdutoStatus } from '../types'
 
@@ -269,4 +270,76 @@ export async function emitirNotaProduto(params: EmitirNotaProdutoParams) {
     if (e instanceof EmitirNotaProdutoError) throw e
     throw new EmitirNotaProdutoError(msg, 502)
   }
+}
+
+// Cancela uma NF-e/NFC-e já autorizada — evento 110111, padrão nacional
+// SEFAZ. AVISO: ainda não testado contra a SEFAZ-PR de verdade (nunca
+// tivemos uma nota realmente autorizada pra cancelar) — ver o aviso no
+// topo de nfe/cancelar.ts antes de confiar cegamente no primeiro teste.
+export async function cancelarNotaProduto(params: {
+  businessId: string
+  notaId: string
+  justificativa: string
+}) {
+  const { businessId, notaId, justificativa } = params
+
+  const [
+    { data: nota },
+    { data: config },
+    { data: biz },
+    { data: certRow },
+  ] = await Promise.all([
+    supabaseAdmin.from('notas_produto').select('*').eq('id', notaId).eq('business_id', businessId).single(),
+    supabaseAdmin.from('faturamento_config').select('ambiente, uf').eq('business_id', businessId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('document_number').eq('id', businessId).single(),
+    supabaseAdmin.from('certificados_digitais').select('pfx').eq('business_id', businessId).maybeSingle(),
+  ])
+
+  if (!nota) throw new EmitirNotaProdutoError('Nota não encontrada', 404)
+  if (nota.status !== 'autorizada') throw new EmitirNotaProdutoError('Só é possível cancelar uma nota autorizada', 400)
+  if (!nota.chave_acesso || !nota.protocolo_autorizacao) throw new EmitirNotaProdutoError('Nota sem chave de acesso ou protocolo — não é possível cancelar', 400)
+  if (!certRow) throw new EmitirNotaProdutoError('Nenhum certificado digital cadastrado ainda', 400)
+  if (!biz?.document_number || !config?.uf) throw new EmitirNotaProdutoError('CNPJ ou UF do negócio não configurados', 400)
+
+  const { pfxBase64, senha } = decryptJSON<{ pfxBase64: string; senha: string }>((certRow.pfx as { enc: string }).enc)
+  const pfxBuffer = Buffer.from(pfxBase64, 'base64')
+  const { chavePem, certPem } = extrairChaveECertificado(pfxBuffer, senha)
+
+  const { xml, id, cUF } = montarEventoCancelamentoXml({
+    ambiente: config.ambiente as NfeAmbiente,
+    uf: config.uf,
+    chaveAcesso: nota.chave_acesso,
+    cnpj: biz.document_number.replace(/\D/g, ''),
+    protocoloAutorizacao: nota.protocolo_autorizacao,
+    justificativa,
+  })
+
+  const signedXml = assinarEventoCancelamentoXml(xml, id, chavePem, certPem)
+  const resultado = await enviarCancelamentoNfe({
+    signedXml,
+    cUF,
+    uf: config.uf,
+    modelo: nota.modelo as Modelo,
+    ambiente: config.ambiente as NfeAmbiente,
+    certificado: { certPem, chavePem },
+  })
+
+  if (!resultado.sucesso) {
+    throw new EmitirNotaProdutoError(`${resultado.cStat ?? '?'}: ${resultado.xMotivo ?? 'erro ao cancelar'}`, 502)
+  }
+
+  const { data: updated, error: updateError } = await supabaseAdmin
+    .from('notas_produto')
+    .update({
+      status: 'cancelada' as NotaProdutoStatus,
+      cancelada_em: new Date().toISOString(),
+      justificativa_cancelamento: justificativa,
+    })
+    .eq('id', notaId)
+    .select()
+    .single()
+
+  if (updateError) throw new EmitirNotaProdutoError(updateError.message, 500)
+
+  return { nota: updated, sefazResponse: resultado }
 }

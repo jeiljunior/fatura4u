@@ -8,7 +8,12 @@ type Invoice = {
   valor_servicos: number
   chave_acesso: string | null
   motivo_rejeicao: string | null
+  motivo_cancelamento: string | null
   customers: { name: string } | { name: string }[] | null
+}
+
+const MOTIVO_CANCELAMENTO_LABEL: Record<string, string> = {
+  '1': 'Erro na emissão', '2': 'Serviço não prestado', '9': 'Outros',
 }
 
 type Customer = { id: string; name: string; document: string | null }
@@ -36,6 +41,35 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
   const [descricaoServico, setDescricaoServico] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const [cancelando, setCancelando] = useState<Invoice | null>(null)
+  const [motivoCancelamento, setMotivoCancelamento] = useState('1')
+  const [justificativaCancelamento, setJustificativaCancelamento] = useState('')
+  const [cancelSaving, setCancelSaving] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  function openCancelar(inv: Invoice) {
+    setCancelando(inv)
+    setMotivoCancelamento('1')
+    setJustificativaCancelamento('')
+    setCancelError('')
+  }
+
+  async function handleCancelar() {
+    if (!cancelando) return
+    setCancelSaving(true)
+    setCancelError('')
+    const res = await fetch(`/api/faturamento/invoices/${cancelando.id}/cancelar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motivo: motivoCancelamento, justificativa: justificativaCancelamento }),
+    })
+    const data = await res.json()
+    setCancelSaving(false)
+    if (!res.ok) { setCancelError(data.error ?? 'Erro ao cancelar nota'); return }
+    setCancelando(null)
+    router.refresh()
+  }
 
   function handleSelectServico(id: string) {
     setServicoId(id)
@@ -93,12 +127,18 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
                   {inv.status === 'rejeitada' && inv.motivo_rejeicao && (
                     <p className="text-xs text-red-500 mt-1 max-w-xs">{inv.motivo_rejeicao}</p>
                   )}
+                  {inv.status === 'cancelada' && inv.motivo_cancelamento && (
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs">{inv.motivo_cancelamento}</p>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs font-mono">{inv.chave_acesso ? `${inv.chave_acesso.slice(0, 12)}…` : '—'}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   {inv.status === 'autorizada' && (
-                    <a href={`/api/faturamento/invoices/${inv.id}/danfse`} target="_blank" rel="noreferrer"
-                      className="text-blue-600 hover:underline">Baixar DANFSe</a>
+                    <>
+                      <a href={`/api/faturamento/invoices/${inv.id}/danfse`} target="_blank" rel="noreferrer"
+                        className="text-blue-600 hover:underline mr-3">Baixar DANFSe</a>
+                      <button onClick={() => openCancelar(inv)} className="text-red-500 hover:underline">Cancelar</button>
+                    </>
                   )}
                 </td>
               </tr>
@@ -139,6 +179,37 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
                 {saving ? 'Emitindo...' : 'Emitir'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelando && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Cancelar nota fiscal</h2>
+              <button onClick={() => setCancelando(null)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              Não existe carta de correção pra NFS-e Nacional — cancelamento é definitivo. Pra corrigir um valor errado, cancele e emita uma nova nota.
+            </p>
+            <div className="space-y-3">
+              <select value={motivoCancelamento} onChange={e => setMotivoCancelamento(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                {Object.entries(MOTIVO_CANCELAMENTO_LABEL).map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+              </select>
+              <textarea placeholder="Justificativa (mínimo 15 caracteres)" value={justificativaCancelamento}
+                onChange={e => setJustificativaCancelamento(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" rows={3} />
+            </div>
+            {cancelError && <p className="text-red-500 text-sm mt-3">{cancelError}</p>}
+            <div className="flex gap-3 mt-5">
+              <button onClick={handleCancelar} disabled={cancelSaving || justificativaCancelamento.trim().length < 15}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                {cancelSaving ? 'Cancelando...' : 'Confirmar cancelamento'}
+              </button>
+              <button onClick={() => setCancelando(null)} className="text-slate-500 text-sm px-4 py-2">Voltar</button>
             </div>
           </div>
         </div>

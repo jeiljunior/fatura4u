@@ -9,6 +9,7 @@ type Nota = {
   valor_total: number
   chave_acesso: string | null
   motivo_rejeicao: string | null
+  justificativa_cancelamento: string | null
   customers: { name: string } | { name: string }[] | null
 }
 type Customer = { id: string; name: string; document: string | null }
@@ -38,6 +39,33 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
   const [itens, setItens] = useState<LinhaItem[]>([{ produtoId: '', quantidade: '1' }])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const [cancelando, setCancelando] = useState<Nota | null>(null)
+  const [justificativaCancelamento, setJustificativaCancelamento] = useState('')
+  const [cancelSaving, setCancelSaving] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  function openCancelar(nota: Nota) {
+    setCancelando(nota)
+    setJustificativaCancelamento('')
+    setCancelError('')
+  }
+
+  async function handleCancelar() {
+    if (!cancelando) return
+    setCancelSaving(true)
+    setCancelError('')
+    const res = await fetch(`/api/faturamento/notas-produto/${cancelando.id}/cancelar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ justificativa: justificativaCancelamento }),
+    })
+    const data = await res.json()
+    setCancelSaving(false)
+    if (!res.ok) { setCancelError(data.error ?? 'Erro ao cancelar nota'); return }
+    setCancelando(null)
+    router.refresh()
+  }
 
   // Destinatário — só obrigatório na NF-e (55); NFC-e permite consumidor não
   // identificado. Preenchido à mão por enquanto (não temos mapeamento
@@ -123,11 +151,12 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
               <th className="px-4 py-3 font-semibold">Valor</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Chave de acesso</th>
+              <th className="px-4 py-3 font-semibold">Ação</th>
             </tr>
           </thead>
           <tbody>
             {initialNotas.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Nenhuma nota de produto emitida ainda</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhuma nota de produto emitida ainda</td></tr>
             )}
             {initialNotas.map(n => (
               <tr key={n.id} className="border-t border-slate-100">
@@ -139,8 +168,16 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
                   {(n.status === 'rejeitada' || n.status === 'denegada') && n.motivo_rejeicao && (
                     <p className="text-xs text-red-500 mt-1 max-w-xs">{n.motivo_rejeicao}</p>
                   )}
+                  {n.status === 'cancelada' && n.justificativa_cancelamento && (
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs">{n.justificativa_cancelamento}</p>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs font-mono">{n.chave_acesso ? `${n.chave_acesso.slice(0, 12)}…` : '—'}</td>
+                <td className="px-4 py-3">
+                  {n.status === 'autorizada' && (
+                    <button onClick={() => openCancelar(n)} className="text-red-500 hover:underline text-xs">Cancelar</button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -241,6 +278,31 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
                 {saving ? 'Emitindo...' : 'Emitir'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelando && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Cancelar nota de produto</h2>
+              <button onClick={() => setCancelando(null)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              Cancelamento só é aceito pela SEFAZ dentro da janela legal (geralmente 24h após a autorização). Fora do prazo, a SEFAZ rejeita o pedido.
+            </p>
+            <textarea placeholder="Justificativa (mínimo 15 caracteres)" value={justificativaCancelamento}
+              onChange={e => setJustificativaCancelamento(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" rows={3} />
+            {cancelError && <p className="text-red-500 text-sm mt-3">{cancelError}</p>}
+            <div className="flex gap-3 mt-5">
+              <button onClick={handleCancelar} disabled={cancelSaving || justificativaCancelamento.trim().length < 15}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                {cancelSaving ? 'Cancelando...' : 'Confirmar cancelamento'}
+              </button>
+              <button onClick={() => setCancelando(null)} className="text-slate-500 text-sm px-4 py-2">Voltar</button>
             </div>
           </div>
         </div>

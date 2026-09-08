@@ -7,6 +7,8 @@ import { montarDpsXml, proximoNumeroDps } from './dps'
 import { assinarDpsXml } from './assinar'
 import { emitirDps } from './emitir'
 import { extrairChaveECertificado } from './certificado'
+import { montarPedRegEventoCancelamentoXml, assinarPedRegEventoXml, enviarCancelamento } from './cancelar'
+import type { MotivoCancelamento } from './cancelar'
 import type { NfseAmbiente } from './mtls-client'
 import type { InvoiceStatus } from '../types'
 
@@ -153,6 +155,75 @@ export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
     if (e instanceof EmitirNotaFiscalError) throw e
     throw new EmitirNotaFiscalError(msg, 502)
   }
+}
+
+// Cancela uma NFS-e já autorizada — evento e101101, único caminho de
+// cancelamento pra esse modelo (não existe carta de correção pra NFS-e
+// Nacional, só cancelamento). Estrutura e endpoint verificados contra o
+// ambiente real de homologação (ver lib/faturamento/nfse/cancelar.ts).
+export async function cancelarNotaFiscal(params: {
+  businessId: string
+  invoiceId: string
+  motivo: MotivoCancelamento
+  justificativa: string
+}) {
+  const { businessId, invoiceId, motivo, justificativa } = params
+
+  const [
+    { data: invoice },
+    { data: config },
+    { data: biz },
+    { data: certRow },
+  ] = await Promise.all([
+    supabaseAdmin.from('invoices').select('*').eq('id', invoiceId).eq('business_id', businessId).single(),
+    supabaseAdmin.from('faturamento_config').select('ambiente').eq('business_id', businessId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('document_type, document_number').eq('id', businessId).single(),
+    supabaseAdmin.from('certificados_digitais').select('pfx').eq('business_id', businessId).maybeSingle(),
+  ])
+
+  if (!invoice) throw new EmitirNotaFiscalError('Nota não encontrada', 404)
+  if (invoice.status !== 'autorizada') throw new EmitirNotaFiscalError('Só é possível cancelar uma nota autorizada', 400)
+  if (!invoice.chave_acesso) throw new EmitirNotaFiscalError('Nota sem chave de acesso — não é possível cancelar', 400)
+  if (!certRow) throw new EmitirNotaFiscalError('Nenhum certificado digital cadastrado ainda', 400)
+  if (!biz?.document_number) throw new EmitirNotaFiscalError('CNPJ/CPF do negócio não configurado', 400)
+
+  const { pfxBase64, senha } = decryptJSON<{ pfxBase64: string; senha: string }>((certRow.pfx as { enc: string }).enc)
+  const pfxBuffer = Buffer.from(pfxBase64, 'base64')
+  const { chavePem, certPem } = extrairChaveECertificado(pfxBuffer, senha)
+
+  const documento = biz.document_number.replace(/\D/g, '')
+  const ambiente = (config?.ambiente as NfseAmbiente) ?? 'homologacao'
+
+  const { xml, id } = montarPedRegEventoCancelamentoXml({
+    ambiente,
+    chaveAcesso: invoice.chave_acesso,
+    ...(biz.document_type === 'cnpj' ? { cnpjAutor: documento } : { cpfAutor: documento }),
+    motivo,
+    justificativa,
+  })
+
+  const signedXml = assinarPedRegEventoXml(xml, id, chavePem, certPem)
+  const resultado = await enviarCancelamento(signedXml, invoice.chave_acesso, { chavePem, certPem }, ambiente)
+
+  if (!resultado.sucesso) {
+    const msg = resultado.erros.map(e => `${e.codigo ?? '?'}: ${e.descricao ?? 'erro desconhecido'}`).join('; ')
+    throw new EmitirNotaFiscalError(msg || 'Erro ao cancelar nota fiscal', 502)
+  }
+
+  const { data: updated, error: updateError } = await supabaseAdmin
+    .from('invoices')
+    .update({
+      status: 'cancelada' as InvoiceStatus,
+      cancelada_em: new Date().toISOString(),
+      motivo_cancelamento: justificativa,
+    })
+    .eq('id', invoiceId)
+    .select()
+    .single()
+
+  if (updateError) throw new EmitirNotaFiscalError(updateError.message, 500)
+
+  return { invoice: updated, sefazResponse: resultado }
 }
 
 // Dispara emissão automática quando uma cobrança é confirmada (webhook de
