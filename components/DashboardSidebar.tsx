@@ -45,30 +45,44 @@ export default function DashboardSidebar({
           <p className="text-slate-400 text-xs truncate">{businessName}</p>
         </div>
 
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {NAV.map(item => {
-            const active = pathname === item.href || pathname.startsWith(item.href + '/')
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm font-semibold ${
-                  active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10'
-                }`}>
-                <span className="text-base">{item.icon}</span>
-                {item.label}
-              </Link>
-            )
-          })}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          <nav className="px-2 py-3 space-y-0.5">
+            {NAV.map(item => {
+              const active = pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm font-semibold ${
+                    active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10'
+                  }`}>
+                  <span className="text-base">{item.icon}</span>
+                  {item.label}
+                </Link>
+              )
+            })}
 
-          <div className="pt-2 border-t border-white/10 mt-2">
-            <Link href="/dashboard/configuracoes"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm font-semibold ${
-                pathname === '/dashboard/configuracoes' ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10'
-              }`}>
-              <span className="text-base">⚙️</span>
-              Configurações
-            </Link>
-          </div>
-        </nav>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <Link href="/dashboard/configuracoes"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm font-semibold ${
+                  pathname === '/dashboard/configuracoes' ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10'
+                }`}>
+                <span className="text-base">⚙️</span>
+                Configurações
+              </Link>
+            </div>
+          </nav>
+
+          <a
+            href="https://htsigns.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 min-h-32 flex flex-col items-center justify-center gap-2 mx-3 my-2 px-4 py-6 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition text-center"
+          >
+            <img src="/brand/htsigns-logo.png" alt="HTSIGNS" style={{ height: 32, width: 'auto' }} />
+            <p className="text-sm font-bold text-slate-800">Certificados Digitais</p>
+            <p className="text-xs text-slate-500 leading-snug">Emita ou renove seu certificado digital para pessoa física ou jurídica com a HTSIGNS.</p>
+            <span className="mt-1 text-xs font-semibold text-white bg-slate-900 px-4 py-2 rounded-lg">Emitir Agora</span>
+          </a>
+        </div>
 
         <div className="px-3 pb-4">
           <button
