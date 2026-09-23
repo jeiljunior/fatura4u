@@ -8,7 +8,7 @@ export default async function NotasProdutoPage() {
   if (!effective) redirect('/login')
 
   const [{ data: notas }, { data: customers }, { data: produtos }] = await Promise.all([
-    supabaseAdmin.from('notas_produto').select('*, customers(name)').eq('business_id', effective.businessId).order('created_at', { ascending: false }),
+    supabaseAdmin.from('notas_produto').select('*, customers(name), notas_produto_cartas_correcao(sequencia, correcao, created_at)').eq('business_id', effective.businessId).order('created_at', { ascending: false }),
     supabaseAdmin.from('customers').select('id, name, document').eq('business_id', effective.businessId).order('name'),
     supabaseAdmin.from('produtos').select('id, nome, ncm, cfop, unidade, preco_venda_cents').eq('business_id', effective.businessId).eq('ativo', true).order('nome'),
   ])

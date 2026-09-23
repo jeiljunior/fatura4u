@@ -18,6 +18,7 @@ import type { NfeDestInput, NfeItemInput } from './nfe-xml'
 import { assinarNfeXml } from './assinar'
 import { enviarLoteNfe, consultarRecibo } from './emitir'
 import { montarEventoCancelamentoXml, assinarEventoCancelamentoXml, enviarCancelamentoNfe } from './cancelar'
+import { montarEventoCartaCorrecaoXml, assinarEventoCartaCorrecaoXml, enviarCartaCorrecao } from './carta-correcao'
 import type { Modelo, NfeAmbiente } from './soap-client'
 import type { NotaProdutoStatus } from '../types'
 
@@ -342,4 +343,77 @@ export async function cancelarNotaProduto(params: {
   if (updateError) throw new EmitirNotaProdutoError(updateError.message, 500)
 
   return { nota: updated, sefazResponse: resultado }
+}
+
+// Carta de Correção Eletrônica (evento 110110) — só NF-e (55) autorizada.
+// Cada CC-e ganha o próximo nSeqEvento (máx. 20 por nota, regra da SEFAZ).
+export async function emitirCartaCorrecaoNotaProduto(params: {
+  businessId: string
+  notaId: string
+  correcao: string
+}) {
+  const { businessId, notaId, correcao } = params
+
+  const [
+    { data: nota },
+    { data: config },
+    { data: biz },
+    { data: certRow },
+    { data: cartas },
+  ] = await Promise.all([
+    supabaseAdmin.from('notas_produto').select('*').eq('id', notaId).eq('business_id', businessId).single(),
+    supabaseAdmin.from('faturamento_config').select('ambiente, uf').eq('business_id', businessId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('document_number').eq('id', businessId).single(),
+    supabaseAdmin.from('certificados_digitais').select('pfx').eq('business_id', businessId).maybeSingle(),
+    supabaseAdmin.from('notas_produto_cartas_correcao').select('sequencia').eq('nota_id', notaId),
+  ])
+
+  if (!nota) throw new EmitirNotaProdutoError('Nota não encontrada', 404)
+  if (nota.modelo !== '55') throw new EmitirNotaProdutoError('Carta de correção só existe para NF-e (modelo 55) — NFC-e não admite', 400)
+  if (nota.status !== 'autorizada') throw new EmitirNotaProdutoError('Só é possível corrigir uma nota autorizada', 400)
+  if (!nota.chave_acesso) throw new EmitirNotaProdutoError('Nota sem chave de acesso — não é possível corrigir', 400)
+  if (!certRow) throw new EmitirNotaProdutoError('Nenhum certificado digital cadastrado ainda', 400)
+  if (!biz?.document_number || !config?.uf) throw new EmitirNotaProdutoError('CNPJ ou UF do negócio não configurados', 400)
+
+  const sequencia = Math.max(0, ...(cartas ?? []).map(c => c.sequencia)) + 1
+  if (sequencia > 20) throw new EmitirNotaProdutoError('Limite de 20 cartas de correção por nota atingido', 400)
+
+  const { pfxBase64, senha } = decryptJSON<{ pfxBase64: string; senha: string }>((certRow.pfx as { enc: string }).enc)
+  const { chavePem, certPem } = extrairChaveECertificado(Buffer.from(pfxBase64, 'base64'), senha)
+
+  let montado: ReturnType<typeof montarEventoCartaCorrecaoXml>
+  try {
+    montado = montarEventoCartaCorrecaoXml({
+      ambiente: config.ambiente as NfeAmbiente,
+      chaveAcesso: nota.chave_acesso,
+      cnpj: biz.document_number.replace(/\D/g, ''),
+      correcao,
+      sequencia,
+    })
+  } catch (e) {
+    throw new EmitirNotaProdutoError(e instanceof Error ? e.message : 'Correção inválida', 400)
+  }
+
+  const signedXml = assinarEventoCartaCorrecaoXml(montado.xml, montado.id, chavePem, certPem)
+  const resultado = await enviarCartaCorrecao({
+    signedXml,
+    cUF: montado.cUF,
+    uf: config.uf,
+    ambiente: config.ambiente as NfeAmbiente,
+    certificado: { certPem, chavePem },
+  })
+
+  if (!resultado.sucesso) {
+    throw new EmitirNotaProdutoError(`${resultado.cStat ?? '?'}: ${resultado.xMotivo ?? 'erro ao registrar carta de correção'}`, 502)
+  }
+
+  const { data: carta, error } = await supabaseAdmin
+    .from('notas_produto_cartas_correcao')
+    .insert({ nota_id: notaId, sequencia, correcao: correcao.trim(), protocolo: resultado.protocolo })
+    .select()
+    .single()
+
+  if (error) throw new EmitirNotaProdutoError(error.message, 500)
+
+  return { carta, sefazResponse: resultado }
 }

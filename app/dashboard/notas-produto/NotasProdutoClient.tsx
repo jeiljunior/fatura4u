@@ -11,6 +11,7 @@ type Nota = {
   motivo_rejeicao: string | null
   justificativa_cancelamento: string | null
   customers: { name: string } | { name: string }[] | null
+  notas_produto_cartas_correcao?: { sequencia: number; correcao: string; created_at: string }[]
 }
 type Customer = { id: string; name: string; document: string | null }
 type Produto = { id: string; nome: string; ncm: string | null; cfop: string | null; unidade: string; preco_venda_cents: number | null }
@@ -64,6 +65,33 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
     setCancelSaving(false)
     if (!res.ok) { setCancelError(data.error ?? 'Erro ao cancelar nota'); return }
     setCancelando(null)
+    router.refresh()
+  }
+
+  const [corrigindo, setCorrigindo] = useState<Nota | null>(null)
+  const [textoCorrecao, setTextoCorrecao] = useState('')
+  const [correcaoSaving, setCorrecaoSaving] = useState(false)
+  const [correcaoError, setCorrecaoError] = useState('')
+
+  function openCorrigir(nota: Nota) {
+    setCorrigindo(nota)
+    setTextoCorrecao('')
+    setCorrecaoError('')
+  }
+
+  async function handleCorrigir() {
+    if (!corrigindo) return
+    setCorrecaoSaving(true)
+    setCorrecaoError('')
+    const res = await fetch(`/api/faturamento/notas-produto/${corrigindo.id}/carta-correcao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correcao: textoCorrecao }),
+    })
+    const data = await res.json()
+    setCorrecaoSaving(false)
+    if (!res.ok) { setCorrecaoError(data.error ?? 'Erro ao registrar carta de correção'); return }
+    setCorrigindo(null)
     router.refresh()
   }
 
@@ -175,7 +203,14 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
                 <td className="px-4 py-3 text-slate-400 text-xs font-mono">{n.chave_acesso ? `${n.chave_acesso.slice(0, 12)}…` : '—'}</td>
                 <td className="px-4 py-3">
                   {n.status === 'autorizada' && (
-                    <button onClick={() => openCancelar(n)} className="text-red-500 hover:underline text-xs">Cancelar</button>
+                    <div className="flex gap-3">
+                      {n.modelo === '55' && (
+                        <button onClick={() => openCorrigir(n)} className="text-blue-600 hover:underline text-xs">
+                          Corrigir{(n.notas_produto_cartas_correcao?.length ?? 0) > 0 ? ` (${n.notas_produto_cartas_correcao!.length})` : ''}
+                        </button>
+                      )}
+                      <button onClick={() => openCancelar(n)} className="text-red-500 hover:underline text-xs">Cancelar</button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -278,6 +313,43 @@ export default function NotasProdutoClient({ initialNotas, customers, produtos }
                 {saving ? 'Emitindo...' : 'Emitir'}
               </button>
               <button onClick={() => setOpen(false)} className="text-slate-500 text-sm px-4 py-2">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {corrigindo && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Carta de correção (NF-e)</h2>
+              <button onClick={() => setCorrigindo(null)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              A carta de correção NÃO pode alterar valores, base de cálculo, alíquota, quantidade, dados do remetente/destinatário nem datas de emissão/saída. Serve pra corrigir dados como descrição, transportadora ou informações adicionais. Máximo de 20 por nota.
+            </p>
+            {(corrigindo.notas_produto_cartas_correcao?.length ?? 0) > 0 && (
+              <div className="mb-4 space-y-2">
+                <p className="text-xs font-semibold text-slate-500">Cartas já registradas</p>
+                {corrigindo.notas_produto_cartas_correcao!
+                  .slice().sort((a, b) => a.sequencia - b.sequencia)
+                  .map(c => (
+                    <p key={c.sequencia} className="text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
+                      <span className="font-semibold">#{c.sequencia}</span> — {c.correcao}
+                    </p>
+                  ))}
+              </div>
+            )}
+            <textarea placeholder="Correção (15 a 1000 caracteres)" value={textoCorrecao}
+              onChange={e => setTextoCorrecao(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" rows={4} maxLength={1000} />
+            {correcaoError && <p className="text-red-500 text-sm mt-3">{correcaoError}</p>}
+            <div className="flex gap-3 mt-5">
+              <button onClick={handleCorrigir} disabled={correcaoSaving || textoCorrecao.trim().length < 15}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+                {correcaoSaving ? 'Enviando...' : 'Registrar correção'}
+              </button>
+              <button onClick={() => setCorrigindo(null)} className="text-slate-500 text-sm px-4 py-2">Voltar</button>
             </div>
           </div>
         </div>
