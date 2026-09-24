@@ -12,6 +12,68 @@
 // sobre tributação perfeita.
 import { montarChaveAcesso } from './chave-acesso'
 
+// Reforma Tributária (NT 2025.002-RTC v1.51, schema PL_010f — ver memória
+// project_reforma_tributaria_ibs_cbs): o grupo det/imposto/IBSCBS é
+// obrigatório (rejeição 1115) pra emitente CRT=3 desde 03/08/2026. Pra
+// CRT 1/2/4 (Simples/MEI) a rejeição só vale a partir de 04/01/2027 e a NT
+// diz que as orientações desses regimes "serão publicadas em NT futura" —
+// por isso o grupo só é montado pra CRT=3. Só tributação integral (CST 000 +
+// cClassTrib 000001, LC 214/2025); item com tratamento diferenciado
+// (redução, isenção, imunidade, monofasia) precisa de mapeamento próprio.
+// Alíquotas de 2026 (ano de teste, LC 214 art. 343/346): IBS UF 0,1%, IBS
+// municipal 0%, CBS 0,9%. Pra 2027+ as alíquotas mudam (e a CBS de 2027 em
+// diante depende de alíquota de referência ainda não publicada) — por isso
+// lança erro em vez de adivinhar.
+const IBSCBS_CST_TRIBUTACAO_INTEGRAL = '000'
+const IBSCBS_CCLASSTRIB_ALIQUOTA_PADRAO = '000001'
+
+function aliquotasIbsCbs(ano: number): { ibsUf: number; ibsMun: number; cbs: number } {
+  if (ano <= 2026) return { ibsUf: 0.1, ibsMun: 0, cbs: 0.9 }
+  throw new Error(`Alíquotas de IBS/CBS pra ${ano} ainda não configuradas — atualizar nfe-xml.ts conforme NT vigente antes de emitir NF-e/NFC-e do regime normal`)
+}
+
+function arred2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100
+}
+
+type IbsCbsItem = { vBC: number; vIBSUF: number; vIBSMun: number; vIBS: number; vCBS: number }
+
+// vBC = vProd − vICMS (− vPIS − vCOFINS, sempre 0 aqui) — regra UB16-10 da NT;
+// a rejeição 1104 ainda está como "implementação futura", mas já seguimos.
+function calcularIbsCbsItem(item: NfeItemInput, ano: number): IbsCbsItem {
+  const al = aliquotasIbsCbs(ano)
+  const vProd = arred2(item.quantidade * item.valorUnitario)
+  const vICMS = item.aliquotaIcms ? arred2((vProd * item.aliquotaIcms) / 100) : 0
+  const vBC = arred2(vProd - vICMS)
+  const vIBSUF = arred2((vBC * al.ibsUf) / 100)
+  const vIBSMun = arred2((vBC * al.ibsMun) / 100)
+  return { vBC, vIBSUF, vIBSMun, vIBS: arred2(vIBSUF + vIBSMun), vCBS: arred2((vBC * al.cbs) / 100) }
+}
+
+function ibsCbsItemXml(c: IbsCbsItem, ano: number): string {
+  const al = aliquotasIbsCbs(ano)
+  return `<IBSCBS>` +
+    `<CST>${IBSCBS_CST_TRIBUTACAO_INTEGRAL}</CST><cClassTrib>${IBSCBS_CCLASSTRIB_ALIQUOTA_PADRAO}</cClassTrib>` +
+    `<gIBSCBS><vBC>${c.vBC.toFixed(2)}</vBC>` +
+    `<gIBSUF><pIBSUF>${al.ibsUf.toFixed(2)}</pIBSUF><vIBSUF>${c.vIBSUF.toFixed(2)}</vIBSUF></gIBSUF>` +
+    `<gIBSMun><pIBSMun>${al.ibsMun.toFixed(2)}</pIBSMun><vIBSMun>${c.vIBSMun.toFixed(2)}</vIBSMun></gIBSMun>` +
+    `<vIBS>${c.vIBS.toFixed(2)}</vIBS>` +
+    `<gCBS><pCBS>${al.cbs.toFixed(2)}</pCBS><vCBS>${c.vCBS.toFixed(2)}</vCBS></gCBS>` +
+    `</gIBSCBS></IBSCBS>`
+}
+
+function ibsCbsTotalXml(itens: IbsCbsItem[]): string {
+  const soma = (f: (c: IbsCbsItem) => number) => arred2(itens.reduce((s, c) => s + f(c), 0)).toFixed(2)
+  return `<IBSCBSTot><vBCIBSCBS>${soma(c => c.vBC)}</vBCIBSCBS>` +
+    `<gIBS>` +
+    `<gIBSUF><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSUF>${soma(c => c.vIBSUF)}</vIBSUF></gIBSUF>` +
+    `<gIBSMun><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSMun>${soma(c => c.vIBSMun)}</vIBSMun></gIBSMun>` +
+    `<vIBS>${soma(c => c.vIBS)}</vIBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus>` +
+    `</gIBS>` +
+    `<gCBS><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vCBS>${soma(c => c.vCBS)}</vCBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gCBS>` +
+    `</IBSCBSTot>`
+}
+
 export type NfeItemInput = {
   numeroItem: number
   descricao: string
@@ -150,7 +212,11 @@ export function montarNfeXml(input: NfeXmlInput): { xml: string; id: string; cha
   const cNF = chave.slice(35, 43)
   const cDV = chave.slice(43, 44)
 
-  const itensXml = input.itens.map(item => {
+  const ano = Number(dhEmi.slice(0, 4))
+  const comIbsCbs = input.emitente.crt === 3
+  const ibsCbsItens = comIbsCbs ? input.itens.map(i => calcularIbsCbsItem(i, ano)) : []
+
+  const itensXml = input.itens.map((item, idx) => {
     const vProd = Number((item.quantidade * item.valorUnitario).toFixed(2))
     return `<det nItem="${item.numeroItem}">` +
       `<prod>` +
@@ -169,7 +235,7 @@ export function montarNfeXml(input: NfeXmlInput): { xml: string; id: string; cha
       `<vUnTrib>${item.valorUnitario.toFixed(10)}</vUnTrib>` +
       `<indTot>1</indTot>` +
       `</prod>` +
-      `<imposto>${icmsXml(item, input.emitente.crt)}${pisConfinsXml()}</imposto>` +
+      `<imposto>${icmsXml(item, input.emitente.crt)}${pisConfinsXml()}${comIbsCbs ? ibsCbsItemXml(ibsCbsItens[idx], ano) : ''}</imposto>` +
       `</det>`
   }).join('')
 
@@ -185,7 +251,10 @@ export function montarNfeXml(input: NfeXmlInput): { xml: string; id: string; cha
     `<vProd>${vProdTotal.toFixed(2)}</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc>` +
     `<vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>0.00</vPIS><vCOFINS>0.00</vCOFINS>` +
     `<vOutro>0.00</vOutro><vNF>${vProdTotal.toFixed(2)}</vNF>` +
-    `</ICMSTot></total>`
+    `</ICMSTot>` +
+    // 2025-2026: vNFTot NÃO soma IBS/CBS (exceção da NT) — igual ao vNF.
+    (comIbsCbs ? ibsCbsTotalXml(ibsCbsItens) + `<vNFTot>${vProdTotal.toFixed(2)}</vNFTot>` : '') +
+    `</total>`
 
   const destXml = input.destinatario
     ? (() => {
