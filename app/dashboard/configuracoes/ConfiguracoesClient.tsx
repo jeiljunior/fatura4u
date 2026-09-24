@@ -216,6 +216,25 @@ export default function ConfiguracoesClient({
     router.refresh()
   }
 
+  // ── Gateway (Mercado Pago) ────────────────────────────────────
+  const mpConnected = gateways.find(g => g.provider === 'mercadopago')?.active ?? false
+  const [mpKey, setMpKey] = useState('')
+  const [mpSecret, setMpSecret] = useState('')
+  const [savingMp, setSavingMp] = useState(false)
+
+  async function connectMercadoPago() {
+    if (!mpKey) return
+    setSavingMp(true)
+    await fetch('/api/faturamento/gateway-credentials', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'mercadopago', apiKey: mpKey, webhookToken: mpSecret || undefined }),
+    })
+    setSavingMp(false)
+    setMpKey('')
+    setMpSecret('')
+    router.refresh()
+  }
+
   // ── Importar clientes (planilha) ────────────────────────────────
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
@@ -420,6 +439,27 @@ export default function ConfiguracoesClient({
             className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
             {savingGw ? 'Salvando...' : asaasConnected ? 'Reconectar' : 'Conectar'}
           </button>
+        </div>
+
+        <div className="border-t border-slate-100 mt-5 pt-5">
+          <p className="font-semibold text-slate-800 text-sm mb-1">
+            Mercado Pago {mpConnected && <span className="text-emerald-600 font-normal">✓ conectado</span>}
+          </p>
+          <p className="text-slate-400 text-sm mb-3">
+            Access Token da sua conta Mercado Pago. A chave secreta é opcional, mas recomendada — sem ela não
+            validamos se a notificação de pagamento realmente veio do Mercado Pago (pegue as duas em
+            Suas integrações → sua aplicação → Webhooks, no painel de desenvolvedor do Mercado Pago).
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input type="password" placeholder="Access Token" value={mpKey} onChange={e => setMpKey(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex-1" />
+            <input type="password" placeholder="Chave secreta do webhook (opcional)" value={mpSecret} onChange={e => setMpSecret(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex-1" />
+            <button onClick={connectMercadoPago} disabled={savingMp || !mpKey}
+              className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">
+              {savingMp ? 'Salvando...' : mpConnected ? 'Reconectar' : 'Conectar'}
+            </button>
+          </div>
         </div>
 
         <div className="border-t border-slate-100 mt-5 pt-5">
