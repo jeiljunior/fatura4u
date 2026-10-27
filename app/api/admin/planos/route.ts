@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { platformAdminMfaOrNull, logAdmin } from '@/lib/platformAdmin'
 import { lerPlanos, salvarPlanos, PADRAO, PLANOS_COM_LIMITES, type PlanoId, type Recurso } from '@/lib/planos'
 
@@ -65,12 +66,14 @@ export async function PUT(req: NextRequest) {
       await logAdmin(admin, 'planos.textos_alterados', null, { plano: id, antes, depois: { subtitulo, recursos: recursos.length } })
       break
     }
-    case 'textos_padrao': {
+    case 'plano_padrao': {
       const id = body.id as PlanoId
-      if (!IDS.includes(id)) return erro('Plano inválido')
-      config.planos[id] = { ...config.planos[id], subtitulo: PADRAO.planos[id].subtitulo, recursos: PADRAO.planos[id].recursos }
+      if (!PLANOS_COM_LIMITES.includes(id)) return erro('Plano inválido')
+      const antes = { preco_cents: config.planos[id].preco_cents, notas_mes: config.planos[id].notas_mes, usuarios: config.planos[id].usuarios }
+      const p = PADRAO.planos[id]
+      config.planos[id] = { ...config.planos[id], preco_cents: p.preco_cents, notas_mes: p.notas_mes, usuarios: p.usuarios }
       await salvarPlanos(config, admin.user.id)
-      await logAdmin(admin, 'planos.textos_restaurados', null, { plano: id })
+      await logAdmin(admin, 'planos.plano_restaurado', null, { plano: id, antes })
       break
     }
     case 'desconto': {
@@ -86,5 +89,7 @@ export async function PUT(req: NextRequest) {
       return erro('Ação desconhecida')
   }
 
+  // A seção de planos da página inicial lê esta configuração.
+  revalidatePath('/')
   return NextResponse.json({ ok: true })
 }

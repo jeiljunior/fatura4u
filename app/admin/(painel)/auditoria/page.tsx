@@ -19,7 +19,7 @@ const ROTULO: Record<string, string> = {
   'planos.contratacao_alterada': 'Alterou a contratação de planos',
   'planos.plano_alterado': 'Alterou preço ou limites de um plano',
   'planos.textos_alterados': 'Alterou os textos de um plano',
-  'planos.textos_restaurados': 'Restaurou os textos padrão de um plano',
+  'planos.plano_restaurado': 'Restaurou os valores padrão de um plano',
   'planos.desconto_alterado': 'Alterou o desconto do plano anual',
 }
 

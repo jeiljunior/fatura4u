@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import HeroParticles from '@/components/HeroParticles'
 import { FUNCIONALIDADES } from '@/lib/funcionalidades'
+import PlanosLanding from '@/components/PlanosLanding'
+
+// A seção de planos vem do painel de gestão; o painel também limpa este cache
+// ao salvar (revalidatePath), o intervalo é só a rede de segurança.
+export const revalidate = 300
 
 export default function LandingPage() {
   return (
@@ -16,6 +21,7 @@ export default function LandingPage() {
             <a href="#funcionalidades" className="hover:text-white transition">Funcionalidades</a>
             <a href="#cobranca-automatica" className="hover:text-white transition">Cobrança automática</a>
             <a href="#como-funciona"   className="hover:text-white transition">Como funciona</a>
+            <a href="#planos" className="hover:text-white transition">Planos</a>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white font-medium transition">
@@ -155,6 +161,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── PLANOS (editável em Painel de gestão > Planos e valores) ─── */}
+      <PlanosLanding />
 
       {/* ── CTA FINAL ────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-blue-700 to-blue-900 py-20 text-center text-white">
