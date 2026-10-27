@@ -215,3 +215,82 @@ export async function ultimasAcoes(limite = 100): Promise<LinhaAuditoria[]> {
     }
   })
 }
+
+// ── Recebimentos (agregado por negócio, sem dados de cliente final) ──────────
+
+export function mesAtualBRT(): string {
+  return hojeBRT().slice(0, 7)
+}
+
+export function mesValido(mes: string | undefined | null): string {
+  return mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : mesAtualBRT()
+}
+
+export function deslocarMes(mes: string, delta: number): string {
+  const [ano, m] = mes.split('-').map(Number)
+  const d = new Date(Date.UTC(ano, m - 1 + delta, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+export function rotuloMes(mes: string): string {
+  const [ano, m] = mes.split('-').map(Number)
+  return new Date(Date.UTC(ano, m - 1, 1, 12)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
+// Intervalo do mês em Brasília (UTC-3, sem horário de verão), como ISO UTC.
+function intervaloMesBRT(mes: string): { inicio: string; fim: string } {
+  const [ano, m] = mes.split('-').map(Number)
+  return {
+    inicio: new Date(Date.UTC(ano, m - 1, 1, 3)).toISOString(),
+    fim: new Date(Date.UTC(ano, m, 1, 3)).toISOString(),
+  }
+}
+
+export type RecebimentoNegocio = {
+  id: string
+  name: string
+  documento: string | null
+  ambiente: string | null
+  pagamentos: number
+  valorCents: number
+  notas: number
+  semNota: number
+}
+
+export async function recebimentosDoMes(mes: string): Promise<RecebimentoNegocio[]> {
+  const { inicio, fim } = intervaloMesBRT(mes)
+
+  const [
+    { data: negocios },
+    { data: pagos },
+    { data: nfse },
+    { data: nfProduto },
+    { data: comNota },
+    { data: configs },
+  ] = await Promise.all([
+    supabaseAdmin.from('businesses').select('id, name, document_number'),
+    supabaseAdmin.from('charges').select('id, business_id, valor_cents').in('status', ['recebida', 'confirmada']).gte('paid_at', inicio).lt('paid_at', fim).limit(10000),
+    supabaseAdmin.from('invoices').select('business_id').eq('status', 'autorizada').gte('created_at', inicio).lt('created_at', fim).limit(10000),
+    supabaseAdmin.from('notas_produto').select('business_id').eq('status', 'autorizada').gte('created_at', inicio).lt('created_at', fim).limit(10000),
+    supabaseAdmin.from('invoices').select('charge_id').not('charge_id', 'is', null).limit(10000),
+    supabaseAdmin.from('faturamento_config').select('business_id, ambiente'),
+  ])
+
+  const comNotaSet = new Set((comNota ?? []).map(n => n.charge_id))
+
+  return (negocios ?? [])
+    .map(n => {
+      const pagosDoNegocio = (pagos ?? []).filter(p => p.business_id === n.id)
+      return {
+        id: n.id,
+        name: n.name,
+        documento: n.document_number,
+        ambiente: (configs ?? []).find(c => c.business_id === n.id)?.ambiente ?? null,
+        pagamentos: pagosDoNegocio.length,
+        valorCents: pagosDoNegocio.reduce((s, p) => s + p.valor_cents, 0),
+        notas: (nfse ?? []).filter(x => x.business_id === n.id).length + (nfProduto ?? []).filter(x => x.business_id === n.id).length,
+        semNota: pagosDoNegocio.filter(p => !comNotaSet.has(p.id)).length,
+      }
+    })
+    .sort((a, b) => b.valorCents - a.valorCents || a.name.localeCompare(b.name))
+}

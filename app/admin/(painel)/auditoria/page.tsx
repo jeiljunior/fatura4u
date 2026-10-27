@@ -10,6 +10,7 @@ const ROTULO: Record<string, string> = {
   'tenant.created': 'Negócio criado',
   'tenant.deleted': 'Negócio excluído',
   'whatsapp.config_updated': 'WhatsApp configurado',
+  'recebimentos.csv_baixado': 'Baixou o CSV de recebimentos',
 }
 
 const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
