@@ -27,7 +27,7 @@ export default async function RecebimentosPage({ searchParams }: { searchParams:
   return (
     <div>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold capitalize text-zinc-900">Recebimentos — {rotuloMes(mes)}</h2>
+        <h2 className="text-xl font-semibold capitalize text-zinc-900">Recebimentos — {rotuloMes(mes)}</h2>
         <a href={`/api/admin/recebimentos?mes=${mes}`} className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50">
           Baixar CSV do mês
         </a>

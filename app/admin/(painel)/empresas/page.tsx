@@ -22,7 +22,7 @@ export default async function NegociosPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-semibold text-zinc-900">Empresas</h2>
+      <h2 className="mb-4 text-xl font-semibold text-zinc-900">Empresas</h2>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <form className="flex gap-2">
           <input name="q" defaultValue={busca} placeholder="Buscar pelo nome"

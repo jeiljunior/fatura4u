@@ -14,6 +14,7 @@ const GRUPOS: { titulo: string; telas: Tela[] }[] = [
       { nome: 'Criar conta', href: '/cadastro' },
       { nome: 'Esqueci minha senha', href: '/esqueci-senha' },
       { nome: 'Redefinir senha', href: '/redefinir-senha', nota: 'abre pelo link do e-mail de recuperação' },
+      { nome: 'Cancelar inscrição de comunicados', href: '/descadastrar', nota: 'abre pelo link no rodapé dos comunicados' },
       { nome: 'Funcionalidade: NFS-e', href: '/funcionalidades/nfse' },
       { nome: 'Funcionalidade: cobrança por PIX, boleto e cartão', href: '/funcionalidades/cobranca-pix-boleto-cartao' },
       { nome: 'Funcionalidade: link de pagamento', href: '/funcionalidades/link-pagamento' },
@@ -40,7 +41,9 @@ const GRUPOS: { titulo: string; telas: Tela[] }[] = [
       { nome: 'Empresas', href: '/admin/empresas' },
       { nome: 'Cadastrar empresa', href: '/admin/novo' },
       { nome: 'Recebimentos', href: '/admin/recebimentos' },
+      { nome: 'Planos e valores', href: '/admin/planos' },
       { nome: 'E-mails', href: '/admin/emails' },
+      { nome: 'Comunicados', href: '/admin/comunicados' },
       { nome: 'Registro de ações', href: '/admin/auditoria' },
       { nome: 'Verificação em duas etapas', href: '/admin/2fa' },
     ],
@@ -52,7 +55,7 @@ export default async function TelasPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-zinc-900">Mapa de telas</h2>
+      <h2 className="text-xl font-semibold text-zinc-900">Mapa de telas</h2>
       <p className="mb-4 text-sm text-zinc-500">Todas as telas do FATUR4U, com link, para percorrer o app e apontar ajustes.</p>
 
       <div className="space-y-6">

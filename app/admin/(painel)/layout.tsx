@@ -11,7 +11,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-zinc-900">
-      <header className="flex items-center justify-between bg-[#050d26] px-8 py-4">
+      <header className="flex items-center justify-between bg-[#050d26] px-8 py-3">
         <div className="flex items-center gap-3">
           <img src="/brand/logo-horizontal-white.png" alt="FATUR4U" style={{ height: 28, width: 'auto' }} />
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.6px] text-white">Painel de gestão</span>

@@ -12,6 +12,15 @@ const ROTULO: Record<string, string> = {
   'whatsapp.config_updated': 'WhatsApp configurado',
   'recebimentos.csv_baixado': 'Baixou o CSV de recebimentos',
   'email.previa_enviada': 'Enviou prévia de e-mail',
+  'comunicado.criado': 'Criou um comunicado',
+  'comunicado.enviado': 'Enviou um comunicado',
+  'comunicado.cancelado': 'Cancelou o envio de um comunicado',
+  'planos.landing_alterada': 'Alterou o modo de preços na landing',
+  'planos.contratacao_alterada': 'Alterou a contratação de planos',
+  'planos.plano_alterado': 'Alterou preço ou limites de um plano',
+  'planos.textos_alterados': 'Alterou os textos de um plano',
+  'planos.textos_restaurados': 'Restaurou os textos padrão de um plano',
+  'planos.desconto_alterado': 'Alterou o desconto do plano anual',
 }
 
 const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
@@ -32,7 +41,7 @@ export default async function AuditoriaPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-zinc-900">Registro de ações</h2>
+      <h2 className="text-xl font-semibold text-zinc-900">Registro de ações</h2>
       <p className="mb-4 text-sm text-zinc-500">
         Tudo que o administrador geral fez no painel. O registro só se acrescenta: não pode ser alterado nem apagado. Mostra as 100 mais recentes.
       </p>

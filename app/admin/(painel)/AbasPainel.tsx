@@ -7,7 +7,9 @@ const ABAS = [
   { label: 'Visão geral', href: '/admin' },
   { label: 'Empresas', href: '/admin/empresas' },
   { label: 'Recebimentos', href: '/admin/recebimentos' },
+  { label: 'Planos e valores', href: '/admin/planos' },
   { label: 'E-mails', href: '/admin/emails' },
+  { label: 'Comunicados', href: '/admin/comunicados' },
   { label: 'Mapa de telas', href: '/admin/telas' },
   { label: 'Registro de ações', href: '/admin/auditoria' },
 ]

@@ -7,6 +7,28 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
+// Comunicados (mala direta): remetente próprio e cabeçalhos de descadastro
+// (List-Unsubscribe) — exigidos pelos provedores de e-mail em envio em massa.
+export async function sendComunicadoEmail(to: string, subject: string, html: string, urlDescadastro: string): Promise<{ ok: boolean; erro?: string }> {
+  if (!resend) return { ok: false, erro: 'RESEND_API_KEY não configurado' }
+  try {
+    const { error } = await resend.emails.send({
+      from: 'FATUR4U <novidades@fatura4u.com.br>',
+      to,
+      subject,
+      html,
+      headers: {
+        'List-Unsubscribe': `<${urlDescadastro}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    })
+    if (error) return { ok: false, erro: String(error.message ?? error) }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, erro: e instanceof Error ? e.message : 'erro ao enviar' }
+  }
+}
+
 export async function sendReminderEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!resend) {
     console.error('[email] RESEND_API_KEY não configurado — nenhum e-mail está sendo enviado')
