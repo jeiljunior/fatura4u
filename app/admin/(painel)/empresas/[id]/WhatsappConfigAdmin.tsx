@@ -44,20 +44,20 @@ export default function WhatsappConfigAdmin({ businessId, initial }: { businessI
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-800">Instância conectada</p>
+        <p className="text-sm font-semibold text-zinc-800">Instância conectada</p>
         <button
           onClick={() => setForm(f => ({ ...f, active: !f.active }))}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.active ? 'bg-emerald-500' : 'bg-zinc-300'}`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.active ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.active ? 'tranzinc-x-6' : 'tranzinc-x-1'}`} />
         </button>
       </div>
       <input placeholder="ID da instância (Z-API)" value={form.instance} onChange={e => setForm(f => ({ ...f, instance: e.target.value }))}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono" />
+        className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm font-mono" />
       <input placeholder="Token da instância (Z-API)" value={form.token} onChange={e => setForm(f => ({ ...f, token: e.target.value }))}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono" />
+        className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm font-mono" />
       <input placeholder="Telefone conectado (com DDI, ex: 5541999998888)" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono" />
+        className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm font-mono" />
       <div className="flex items-center gap-3">
         <button onClick={save} disabled={saving}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition disabled:opacity-50">

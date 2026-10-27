@@ -23,7 +23,7 @@ export default function DeleteTenantButton({ businessId, businessName }: { busin
       setDeleting(false)
       return
     }
-    router.push('/admin')
+    router.push('/admin/empresas')
     router.refresh()
   }
 
@@ -38,20 +38,20 @@ export default function DeleteTenantButton({ businessId, businessName }: { busin
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !deleting && setOpen(false)}>
-          <div className="bg-white rounded-2xl border border-red-200 shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl border border-red-200 shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
             <h2 className="font-bold text-red-700 text-lg mb-2">⚠️ Excluir tenant permanentemente</h2>
-            <p className="text-sm text-slate-600 mb-4">
+            <p className="text-sm text-zinc-600 mb-4">
               Isso apaga <strong>{businessName}</strong> e TODOS os dados relacionados — clientes, cobranças,
               notas fiscais, certificado digital e credenciais de gateway. Os usuários vinculados a essa conta
               também perdem o login. <strong>Essa ação não pode ser desfeita.</strong>
             </p>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
               Digite <span className="font-mono font-bold">{businessName}</span> pra confirmar
             </label>
             <input
               value={confirmText}
               onChange={e => setConfirmText(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full border border-zinc-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder={businessName}
               autoFocus
             />
@@ -60,7 +60,7 @@ export default function DeleteTenantButton({ businessId, businessName }: { busin
               <button
                 onClick={() => setOpen(false)}
                 disabled={deleting}
-                className="flex-1 text-sm font-semibold px-4 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-50"
+                className="flex-1 text-sm font-semibold px-4 py-2.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition disabled:opacity-50"
               >
                 Cancelar
               </button>

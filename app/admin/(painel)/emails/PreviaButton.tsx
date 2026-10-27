@@ -22,7 +22,7 @@ export default function PreviaButton({ id }: { id: string }) {
   return (
     <span className="inline-flex items-center gap-3">
       <button onClick={enviar} disabled={estado === 'enviando'}
-        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+        className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50">
         {estado === 'enviando' ? 'Enviando...' : 'Enviar prévia para mim'}
       </button>
       {msg && <span className={`text-xs ${estado === 'ok' ? 'text-emerald-600' : 'text-red-500'}`}>{msg}</span>}
