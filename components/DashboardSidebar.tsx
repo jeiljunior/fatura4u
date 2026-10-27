@@ -18,12 +18,14 @@ export default function DashboardSidebar({
   userName,
   logoUrl,
   brandColor,
+  isAdmin,
   children,
 }: {
   businessName: string
   userName: string
   logoUrl?: string | null
   brandColor?: string | null
+  isAdmin?: boolean
   children?: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -85,6 +87,13 @@ export default function DashboardSidebar({
         </div>
 
         <div className="px-3 pb-4">
+          {isAdmin && (
+            <Link href="/admin"
+              className="flex items-center gap-3 px-3 py-2 mb-1 rounded-lg text-sm font-semibold text-blue-300 hover:bg-white/10 transition">
+              <span className="text-base">🛡️</span>
+              Painel de gestão
+            </Link>
+          )}
           <button
             type="button"
             onClick={toggleTheme}

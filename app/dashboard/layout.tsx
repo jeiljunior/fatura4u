@@ -21,13 +21,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const cookieStore = await cookies()
   const impersonatingId = cookieStore.get('admin_impersonating_business_id')?.value
-  const isImpersonating = !!impersonatingId && await isPlatformAdmin(user.id)
+  const isAdmin = await isPlatformAdmin(user.id)
+  const isImpersonating = !!impersonatingId && isAdmin
 
   const effectiveBusinessId = isImpersonating ? impersonatingId! : profile.business_id
   if (!effectiveBusinessId) {
     // Administrador "puro" (sem negócio próprio) — manda pro painel master em
     // vez de travar num /dashboard que ele não tem como acessar.
-    redirect(await isPlatformAdmin(user.id) ? '/admin' : '/login')
+    redirect(isAdmin ? '/admin' : '/login')
   }
 
   const { data: biz } = await supabaseAdmin
@@ -44,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userName={profile.full_name ?? ''}
         logoUrl={biz?.logo_url}
         brandColor={biz?.brand_color}
+        isAdmin={isAdmin}
       >
         {children}
       </DashboardSidebar>
