@@ -4,6 +4,7 @@
 import supabaseAdmin from '@/lib/supabase/admin'
 import { sendWhatsAppText } from '@/lib/whatsapp'
 import { sendReminderEmail } from '@/lib/email'
+import { htmlLembrete } from '@/lib/emailTemplates'
 
 // Negativo = dias antes do vencimento, 0 = vence hoje, positivo = dias em atraso.
 const OFFSETS = [-3, 0, 1, 3, 7] as const
@@ -39,7 +40,7 @@ function substituirPlaceholders(template: string, vars: Record<string, string>):
 // Se o tenant customizou a mensagem em Configurações, usa ela (com
 // placeholders {cliente} {negocio} {valor} {dias} {link} substituídos).
 // Senão, cai no texto padrão hardcoded abaixo.
-function montarMensagem(offset: number, nomeCliente: string, nomeNegocio: string, valorFmt: string, link: string | null, templates: TemplatesRegua = {}): string {
+export function montarMensagem(offset: number, nomeCliente: string, nomeNegocio: string, valorFmt: string, link: string | null, templates: TemplatesRegua = {}): string {
   const linkTxt = link ? `\n\nPague aqui: ${link}` : ''
   const varsBase = { cliente: nomeCliente, negocio: nomeNegocio, valor: valorFmt, link: link ?? '' }
 
@@ -58,7 +59,7 @@ function montarMensagem(offset: number, nomeCliente: string, nomeNegocio: string
   return `Olá, ${nomeCliente}, notamos que sua cobrança de ${valorFmt} com ${nomeNegocio} está vencida há ${dias}. Regularize quando puder.${linkTxt}`
 }
 
-function assuntoEmail(offset: number): string {
+export function assuntoEmail(offset: number): string {
   if (offset > 0) return `Sua cobrança vence em ${offset} dia${offset > 1 ? 's' : ''}`
   if (offset === 0) return 'Sua cobrança vence hoje'
   return 'Cobrança vencida'
@@ -122,7 +123,7 @@ export async function enviarLembretesDoDia(): Promise<{ verificadas: number; env
       }
 
       if (customer.email && (config?.regua_email_ativa ?? true) && !(await jaEnviado(raw.id, offset, 'email'))) {
-        const ok = await sendReminderEmail(customer.email, assuntoEmail(offset), `<p>${texto.replace(/\n/g, '<br/>')}</p>`)
+        const ok = await sendReminderEmail(customer.email, assuntoEmail(offset), htmlLembrete(texto))
         if (ok) {
           await supabaseAdmin.from('charge_reminders').insert({ charge_id: raw.id, offset_dias: offset, canal: 'email' })
           enviadas++

@@ -11,6 +11,7 @@ const ROTULO: Record<string, string> = {
   'tenant.deleted': 'Negócio excluído',
   'whatsapp.config_updated': 'WhatsApp configurado',
   'recebimentos.csv_baixado': 'Baixou o CSV de recebimentos',
+  'email.previa_enviada': 'Enviou prévia de e-mail',
 }
 
 const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {

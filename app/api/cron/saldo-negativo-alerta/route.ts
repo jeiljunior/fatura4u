@@ -3,10 +3,7 @@ import supabaseAdmin from '@/lib/supabase/admin'
 import { sendReminderEmail } from '@/lib/email'
 import { buscarSaldoProjetado } from '@/lib/financeiro/saldoProjetado'
 import { hojeBRT } from '@/lib/dateBrt'
-
-function formatMoney(cents: number) {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+import { ASSUNTO_ALERTA_SALDO, htmlAlertaSaldo } from '@/lib/emailTemplates'
 
 // GET /api/cron/saldo-negativo-alerta — 1x/dia (vercel.json). Pra cada
 // negócio cujo saldo projetado em 7 dias fica negativo, manda um e-mail de
@@ -46,15 +43,9 @@ export async function GET(req: NextRequest) {
     const email = userData?.user?.email
     if (!email) continue
 
-    const html = `
-      <p>Olá, ${biz.name}!</p>
-      <p>De acordo com o saldo em caixa e as contas a pagar/receber pendentes, seu saldo projetado fica <strong>negativo</strong> nos próximos 7 dias.</p>
-      <p>Saldo em caixa atual: <strong>${formatMoney(saldoAtualCents)}</strong><br/>
-      Saldo projetado em 7 dias: <strong>${formatMoney(projecao.saldoProjetadoCents)}</strong></p>
-      <p>Vale dar uma olhada no Financeiro pra ver o que pode ser adiado ou antecipado.</p>
-    `
+    const html = htmlAlertaSaldo(biz.name, saldoAtualCents, projecao.saldoProjetadoCents)
 
-    const ok = await sendReminderEmail(email, '⚠️ Seu saldo projetado fica negativo nos próximos 7 dias', html)
+    const ok = await sendReminderEmail(email, ASSUNTO_ALERTA_SALDO, html)
     if (ok) {
       await supabaseAdmin.from('businesses').update({ saldo_alerta_enviado_em: hoje }).eq('id', biz.id)
       sent++
