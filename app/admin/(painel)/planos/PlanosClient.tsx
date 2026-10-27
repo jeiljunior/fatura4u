@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { ConfigPlanos, PlanoId, Recurso } from '@/lib/planos'
-import { PLANOS_COM_LIMITES, precoAnual, precoMensalTexto } from '@/lib/planos'
+import type { ConfigPlanos, PlanoId, Recurso } from '@/lib/planosBase'
+import { PLANOS_COM_LIMITES, precoAnual, precoMensalTexto } from '@/lib/planosBase'
 
 const card = 'rounded-xl border border-zinc-200 bg-white p-5'
 const campo = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900'
