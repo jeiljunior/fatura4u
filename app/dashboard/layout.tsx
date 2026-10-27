@@ -4,6 +4,7 @@ import supabaseAdmin from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import DashboardSidebar from '@/components/DashboardSidebar'
 import ImpersonateBanner from '@/components/ImpersonateBanner'
+import { isPlatformAdmin } from '@/lib/platformAdmin'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,7 +13,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, business_id, super_admin')
+    .select('full_name, business_id')
     .eq('id', user.id)
     .single()
 
@@ -20,13 +21,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const cookieStore = await cookies()
   const impersonatingId = cookieStore.get('admin_impersonating_business_id')?.value
-  const isImpersonating = profile.super_admin && !!impersonatingId
+  const isImpersonating = !!impersonatingId && await isPlatformAdmin(user.id)
 
   const effectiveBusinessId = isImpersonating ? impersonatingId! : profile.business_id
   if (!effectiveBusinessId) {
-    // Super admin "puro" (sem negócio próprio) — manda pro painel master em
+    // Administrador "puro" (sem negócio próprio) — manda pro painel master em
     // vez de travar num /dashboard que ele não tem como acessar.
-    redirect(profile.super_admin ? '/admin' : '/login')
+    redirect(await isPlatformAdmin(user.id) ? '/admin' : '/login')
   }
 
   const { data: biz } = await supabaseAdmin

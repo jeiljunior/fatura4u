@@ -1,20 +1,15 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import supabaseAdmin from '@/lib/supabase/admin'
+import { requirePlatformAdmin } from '@/lib/platformAdmin'
 
 export default async function AdminPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { user } = await requirePlatformAdmin()
 
-  const { data: profile } = await supabase
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('super_admin, full_name')
+    .select('full_name')
     .eq('id', user.id)
     .single()
-
-  if (!profile?.super_admin) redirect('/dashboard')
 
   const { data: businesses } = await supabaseAdmin
     .from('businesses')
@@ -50,7 +45,7 @@ export default async function AdminPage() {
           </span>
         </div>
         <div className="px-6 py-5 border-b border-slate-700/50">
-          <p className="text-white text-sm font-semibold">{profile.full_name}</p>
+          <p className="text-white text-sm font-semibold">{profile?.full_name}</p>
           <p className="text-slate-400 text-xs">Administrador geral</p>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
