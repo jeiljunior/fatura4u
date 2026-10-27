@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { requirePlatformAdmin } from '@/lib/platformAdmin'
+import { requirePlatformAdminMfa } from '@/lib/platformAdmin'
 
 export default async function AdminPage() {
-  const { user } = await requirePlatformAdmin()
+  const { user } = await requirePlatformAdminMfa()
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')

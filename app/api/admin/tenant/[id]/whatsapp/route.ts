@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { platformAdminOrNull, logAdmin } from '@/lib/platformAdmin'
+import { platformAdminMfaOrNull, logAdmin } from '@/lib/platformAdmin'
 
 // PUT /api/admin/tenant/[id]/whatsapp — só super admin. A instância Z-API é
 // provisionada manualmente fora do app (mesma lógica do ATEND+ no AGEND4U);
 // aqui só se guarda instance/token/phone já existentes e liga/desliga.
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await platformAdminOrNull()
+  const admin = await platformAdminMfaOrNull()
   if (!admin) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const { id } = await params

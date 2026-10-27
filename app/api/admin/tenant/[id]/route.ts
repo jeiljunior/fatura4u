@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { platformAdminOrNull, logAdmin } from '@/lib/platformAdmin'
+import { platformAdminMfaOrNull, logAdmin } from '@/lib/platformAdmin'
 
 // DELETE /api/admin/tenant/[id] — exclui permanentemente um tenant.
 // Todas as tabelas com business_id têm ON DELETE CASCADE, então excluir a
@@ -11,7 +11,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const admin = await platformAdminOrNull()
+  const admin = await platformAdminMfaOrNull()
   if (!admin) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const { id } = await params

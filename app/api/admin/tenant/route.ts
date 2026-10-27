@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { platformAdminOrNull, logAdmin } from '@/lib/platformAdmin'
+import { platformAdminMfaOrNull, logAdmin } from '@/lib/platformAdmin'
 
 // POST /api/admin/tenant — cadastro manual de tenant pelo super admin, sem passar
 // pelo wizard de autocadastro. Mesma lógica de /api/cadastro, chamada pelo admin
 // em vez do próprio cliente.
 export async function POST(req: NextRequest) {
-  const admin = await platformAdminOrNull()
+  const admin = await platformAdminMfaOrNull()
   if (!admin) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const { email, senha, fullName, businessName, docType, docNumber, phone } = await req.json()

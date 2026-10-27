@@ -1,8 +1,8 @@
-import { requirePlatformAdmin } from '@/lib/platformAdmin'
+import { requirePlatformAdminMfa } from '@/lib/platformAdmin'
 import NovoTenantForm from './NovoTenantForm'
 
 export default async function NovoTenantPage() {
-  await requirePlatformAdmin()
+  await requirePlatformAdminMfa()
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">

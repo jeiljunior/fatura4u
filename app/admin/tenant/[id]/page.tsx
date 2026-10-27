@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import supabaseAdmin from '@/lib/supabase/admin'
-import { requirePlatformAdmin } from '@/lib/platformAdmin'
+import { requirePlatformAdminMfa } from '@/lib/platformAdmin'
 import ImpersonateButton from './ImpersonateButton'
 import DeleteTenantButton from './DeleteTenantButton'
 import WhatsappConfigAdmin from './WhatsappConfigAdmin'
@@ -29,7 +29,7 @@ function fmt(cents: number) {
 export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const { user } = await requirePlatformAdmin()
+  const { user } = await requirePlatformAdminMfa()
 
   const { data: adminProfile } = await supabaseAdmin
     .from('profiles')
