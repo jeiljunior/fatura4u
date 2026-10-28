@@ -75,7 +75,7 @@ export default function DashboardSidebar({
           </nav>
 
           <a
-            href="https://htsigns.com.br"
+            href="https://www.htsigns.com.br/htsigns-certificado-digital/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 min-h-32 flex flex-col items-center justify-center gap-2 mx-3 my-2 px-4 py-6 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition text-center"
