@@ -11,6 +11,7 @@ const NAV = [
   { label: 'Produtos',     href: '/dashboard/produtos',     icon: '📦' },
   { label: 'Notas de Produto', href: '/dashboard/notas-produto', icon: '🧾' },
   { label: 'Contas a pagar', href: '/dashboard/contas-a-pagar', icon: '📉' },
+  { label: 'Planos',       href: '/dashboard/planos',       icon: '⭐' },
 ]
 
 export default function DashboardSidebar({

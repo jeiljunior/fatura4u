@@ -30,6 +30,7 @@ const GRUPOS: { titulo: string; telas: Tela[] }[] = [
       { nome: 'Produtos', href: '/dashboard/produtos' },
       { nome: 'Notas de produto (NF-e e NFC-e)', href: '/dashboard/notas-produto' },
       { nome: 'Contas a pagar', href: '/dashboard/contas-a-pagar' },
+      { nome: 'Planos (Meu plano)', href: '/dashboard/planos' },
       { nome: 'Linha do tempo (saldo projetado)', href: '/dashboard/futuro' },
       { nome: 'Configurações', href: '/dashboard/configuracoes' },
     ],
