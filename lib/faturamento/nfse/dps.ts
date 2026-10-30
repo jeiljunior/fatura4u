@@ -71,6 +71,11 @@ const REGIME_TO_OPSIMPNAC: Record<DpsInput['prestador']['regime'], { opSimpNac: 
 
 export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
   const tpAmb = input.ambiente === 'producao' ? 1 : 2
+  // Leiaute da NT 009/2026 (pacote de esquemas de produção restrita de 20/10/2026): o infDPS ganha o finNFSe obrigatório
+  // (0 = NFS-e regular), logo depois de tpEmit, e na cServ a xDescServ passa a vir depois do cNBS. A homologação já exige;
+  // a produção segue no leiaute anterior (migração anunciada para 01/12/2026 — conferir no portal da NFS-e antes dessa data
+  // e passar a usar o leiaute novo na produção também).
+  const leiauteNovo = input.ambiente !== 'producao'
   // TSDateTimeUTC: confirmado em teste real que rejeita milissegundos e "Z" —
   // a própria resposta de erro da Sefin usa horário de Brasília com offset
   // explícito "-03:00" (ex: "dataHoraProcessamento":"...-03:00"), não UTC/Z.
@@ -112,7 +117,7 @@ export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
     <serie>${esc(input.serie)}</serie>
     <nDPS>${esc(input.numeroDps)}</nDPS>
     <dCompet>${input.dataCompetencia}</dCompet>
-    <tpEmit>1</tpEmit>
+    <tpEmit>1</tpEmit>${leiauteNovo ? '\n    <finNFSe>0</finNFSe>' : ''}
     <cLocEmi>${input.municipioIbge}</cLocEmi>
     <prest>
       <${prestDocTag}>${esc(input.prestador.documento)}</${prestDocTag}>${input.prestador.inscricaoMunicipal ? `\n      <IM>${esc(formatarIM(input.prestador.inscricaoMunicipal))}</IM>` : ''}
@@ -128,8 +133,11 @@ export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
       </locPrest>
       <cServ>
         <cTribNac>${esc(input.servico.codigoTribNac.replace(/\D/g, ''))}</cTribNac>
-        <xDescServ>${esc(input.servico.descricao)}</xDescServ>
-        <cNBS>${esc(formatarNbs(input.servico.codigoNbs))}</cNBS>
+        ${leiauteNovo
+          ? `<cNBS>${esc(formatarNbs(input.servico.codigoNbs))}</cNBS>
+        <xDescServ>${esc(input.servico.descricao)}</xDescServ>`
+          : `<xDescServ>${esc(input.servico.descricao)}</xDescServ>
+        <cNBS>${esc(formatarNbs(input.servico.codigoNbs))}</cNBS>`}
       </cServ>
     </serv>
     <valores>
