@@ -127,7 +127,7 @@ export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
         <cLocPrestacao>${input.municipioIbge}</cLocPrestacao>
       </locPrest>
       <cServ>
-        <cTribNac>${esc(input.servico.codigoTribNac)}</cTribNac>
+        <cTribNac>${esc(input.servico.codigoTribNac.replace(/\D/g, ''))}</cTribNac>
         <xDescServ>${esc(input.servico.descricao)}</xDescServ>
         <cNBS>${esc(formatarNbs(input.servico.codigoNbs))}</cNBS>
       </cServ>
