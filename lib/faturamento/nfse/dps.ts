@@ -63,9 +63,11 @@ function formatarNbs(nbs: string): string {
 }
 
 // opSimpNac: 1=Não optante, 2=Optante MEI, 3=Optante Simples (exceto MEI) — conferir com contador
-const REGIME_TO_OPSIMPNAC: Record<DpsInput['prestador']['regime'], { opSimpNac: number; regEspTrib: number }> = {
+// regApTribSN (obrigatório só para optante ME/EPP, opSimpNac=3): 1 = tributos federais e municipal pelo Simples Nacional
+// (o caso comum; o Emissor Nacional pergunta isso no cadastro do emitente — conferir com a contadora).
+const REGIME_TO_OPSIMPNAC: Record<DpsInput['prestador']['regime'], { opSimpNac: number; regApTribSN?: number; regEspTrib: number }> = {
   mei: { opSimpNac: 2, regEspTrib: 0 },
-  simples: { opSimpNac: 3, regEspTrib: 0 },
+  simples: { opSimpNac: 3, regApTribSN: 1, regEspTrib: 0 },
   normal: { opSimpNac: 1, regEspTrib: 0 },
 }
 
@@ -123,7 +125,7 @@ export function montarDpsXml(input: DpsInput): { xml: string; id: string } {
       <${prestDocTag}>${esc(input.prestador.documento)}</${prestDocTag}>${input.prestador.inscricaoMunicipal ? `\n      <IM>${esc(formatarIM(input.prestador.inscricaoMunicipal))}</IM>` : ''}
       <xNome>${esc(input.prestador.razaoSocial)}</xNome>
       <regTrib>
-        <opSimpNac>${regime.opSimpNac}</opSimpNac>
+        <opSimpNac>${regime.opSimpNac}</opSimpNac>${regime.regApTribSN ? `\n        <regApTribSN>${regime.regApTribSN}</regApTribSN>` : ''}
         <regEspTrib>${regime.regEspTrib}</regEspTrib>
       </regTrib>
     </prest>${tomaBlock}
