@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Conta = {
@@ -10,6 +10,14 @@ type Conta = {
   due_date: string
   status: string
   paid_at: string | null
+  recurrence_group_id?: string | null
+}
+
+type Modelo = {
+  id: string
+  descricao: string
+  categoria: string | null
+  valor_cents: number | null
 }
 
 const CATEGORIAS = ['Aluguel', 'Fornecedores', 'Impostos', 'Assinaturas', 'Salários', 'Outros']
@@ -31,12 +39,32 @@ function situacao(conta: Conta): { label: string; color: string } {
 export default function ContasPagarClient({ initialContas }: { initialContas: Conta[] }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [modelos, setModelos] = useState<Modelo[]>([])
+  const [modeloId, setModeloId] = useState('')
   const [descricao, setDescricao] = useState('')
   const [categoria, setCategoria] = useState('Outros')
   const [valueReais, setValueReais] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [recorrente, setRecorrente] = useState(false)
+  const [recorrenciaMeses, setRecorrenciaMeses] = useState(12)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    fetch('/api/contas-pagar-modelos')
+      .then(r => r.json())
+      .then(data => setModelos(data.modelos ?? []))
+  }, [open])
+
+  function handleSelectModelo(id: string) {
+    setModeloId(id)
+    const m = modelos.find(x => x.id === id)
+    if (!m) return
+    setDescricao(m.descricao)
+    if (m.categoria) setCategoria(m.categoria)
+    if (m.valor_cents) setValueReais((m.valor_cents / 100).toFixed(2).replace('.', ','))
+  }
 
   const totalPendente = initialContas.filter(c => c.status === 'pendente').reduce((s, c) => s + c.valor_cents, 0)
   const totalVencido = initialContas.filter(c => c.status === 'pendente' && c.due_date < hoje()).reduce((s, c) => s + c.valor_cents, 0)
@@ -58,7 +86,7 @@ export default function ContasPagarClient({ initialContas }: { initialContas: Co
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Erro ao criar conta'); return }
     setOpen(false)
-    setDescricao(''); setValueReais(''); setDueDate(''); setCategoria('Outros')
+    setDescricao(''); setValueReais(''); setDueDate(''); setCategoria('Outros'); setModeloId('')
     router.refresh()
   }
 
@@ -145,6 +173,16 @@ export default function ContasPagarClient({ initialContas }: { initialContas: Co
               <button onClick={() => setOpen(false)} aria-label="Fechar" className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
             </div>
             <div className="space-y-3">
+              {modelos.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Usar modelo (opcional)</label>
+                  <select value={modeloId} onChange={e => handleSelectModelo(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    <option value="">Preencher manualmente</option>
+                    {modelos.map(m => <option key={m.id} value={m.id}>{m.descricao}</option>)}
+                  </select>
+                </div>
+              )}
               <input placeholder="Descrição (ex: Aluguel do escritório)" value={descricao} onChange={e => setDescricao(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
               <select value={categoria} onChange={e => setCategoria(e.target.value)}
