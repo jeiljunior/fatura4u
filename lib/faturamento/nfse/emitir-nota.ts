@@ -24,6 +24,8 @@ export type EmitirNotaFiscalParams = {
   servicoId?: string | null
   valorServicos: number
   descricaoServico: string
+  // nota que já existe como "a emitir" (veio de uma integração): é emitida e atualizada, em vez de criar outra
+  rascunhoId?: string | null
 }
 
 export class EmitirNotaFiscalError extends Error {
@@ -33,7 +35,7 @@ export class EmitirNotaFiscalError extends Error {
 }
 
 export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
-  const { businessId, customerId, chargeId, servicoId, valorServicos, descricaoServico } = params
+  const { businessId, customerId, chargeId, servicoId, valorServicos, descricaoServico, rascunhoId } = params
 
   const [
     { data: config },
@@ -72,19 +74,28 @@ export async function emitirNotaFiscal(params: EmitirNotaFiscalParams) {
   // o rastro de uma emissão mesmo se a chamada falhar no meio.
   const numeroDps = await proximoNumeroDps(businessId, config.serie_dps)
 
-  const { data: invoice, error: insertError } = await supabaseAdmin
-    .from('invoices')
-    .insert({
-      business_id: businessId,
-      customer_id: customerId,
-      charge_id: chargeId ?? null,
-      status: 'processando' as InvoiceStatus,
-      valor_servicos: valorServicos,
-      codigo_servico: codigoServico,
-      aliquota: aliquotaIss,
-    })
-    .select()
-    .single()
+  const dadosDaNota = {
+    status: 'processando' as InvoiceStatus,
+    valor_servicos: valorServicos,
+    codigo_servico: codigoServico,
+    aliquota: aliquotaIss,
+    motivo_rejeicao: null,
+  }
+  // "a emitir" (rascunho) ou rejeitada que veio de integração: o mesmo registro é reaproveitado. A condição no UPDATE impede duas emissões ao mesmo tempo.
+  const { data: invoice, error: insertError } = rascunhoId
+    ? await supabaseAdmin
+        .from('invoices')
+        .update(dadosDaNota)
+        .eq('id', rascunhoId)
+        .eq('business_id', businessId)
+        .or('status.eq.rascunho,and(status.eq.rejeitada,origem.not.is.null)')
+        .select()
+        .single()
+    : await supabaseAdmin
+        .from('invoices')
+        .insert({ business_id: businessId, customer_id: customerId, charge_id: chargeId ?? null, ...dadosDaNota })
+        .select()
+        .single()
 
   if (insertError) throw new EmitirNotaFiscalError(insertError.message, 500)
 

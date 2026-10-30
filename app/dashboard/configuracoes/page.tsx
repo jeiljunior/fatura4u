@@ -2,19 +2,21 @@ import { redirect } from 'next/navigation'
 import supabaseAdmin from '@/lib/supabase/admin'
 import { getEffectiveBusinessId } from '@/lib/getBusinessId'
 import ConfiguracoesClient from './ConfiguracoesClient'
+import IntegracaoCard from '@/components/IntegracaoCard'
 
 export default async function ConfiguracoesPage() {
   const effective = await getEffectiveBusinessId()
   if (!effective) redirect('/login')
   const businessId = effective.businessId
 
-  const [{ data: business }, { data: config }, { data: certificado }, { data: gateways }, { data: whatsappConfig }, { data: servicos }] = await Promise.all([
+  const [{ data: business }, { data: config }, { data: certificado }, { data: gateways }, { data: whatsappConfig }, { data: servicos }, { data: chaves }] = await Promise.all([
     supabaseAdmin.from('businesses').select('*').eq('id', businessId).single(),
     supabaseAdmin.from('faturamento_config').select('*').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('certificados_digitais').select('valido_ate').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('gateway_credentials').select('provider, active').eq('business_id', businessId),
     supabaseAdmin.from('whatsapp_config').select('active').eq('business_id', businessId).maybeSingle(),
     supabaseAdmin.from('servicos').select('*').eq('business_id', businessId).order('nome'),
+    supabaseAdmin.from('integration_tokens').select('id, name, active, last_used_at, created_at').eq('business_id', businessId).order('created_at', { ascending: false }),
   ])
 
   return (
@@ -31,6 +33,9 @@ export default async function ConfiguracoesPage() {
           whatsappConectado={whatsappConfig?.active ?? false}
           servicos={servicos ?? []}
         />
+        <div className="mt-6">
+          <IntegracaoCard initial={chaves ?? []} />
+        </div>
       </div>
     </main>
   )

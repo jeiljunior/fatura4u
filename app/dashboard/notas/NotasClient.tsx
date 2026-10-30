@@ -9,6 +9,10 @@ type Invoice = {
   chave_acesso: string | null
   motivo_rejeicao: string | null
   motivo_cancelamento: string | null
+  // nota que veio de uma integração (ex.: SIGN4U): fica "a emitir" até a pessoa conferir e emitir
+  origem?: string | null
+  descricao_servico?: string | null
+  pago_em?: string | null
   customers: { name: string } | { name: string }[] | null
 }
 
@@ -41,6 +45,20 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
   const [descricaoServico, setDescricaoServico] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const [emitindoId, setEmitindoId] = useState<string | null>(null)
+  const [emitErro, setEmitErro] = useState<{ id: string; msg: string } | null>(null)
+
+  // emite uma nota "a emitir" (veio de integração) ou tenta de novo uma rejeitada
+  async function emitirPendente(inv: Invoice) {
+    setEmitindoId(inv.id)
+    setEmitErro(null)
+    const res = await fetch(`/api/faturamento/invoices/${inv.id}/emitir`, { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    setEmitindoId(null)
+    if (!res.ok) setEmitErro({ id: inv.id, msg: data.error ?? 'Erro ao emitir nota' })
+    router.refresh()
+  }
 
   const [cancelando, setCancelando] = useState<Invoice | null>(null)
   const [motivoCancelamento, setMotivoCancelamento] = useState('1')
@@ -120,10 +138,22 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
             )}
             {initialInvoices.map(inv => (
               <tr key={inv.id} className="border-t border-slate-100">
-                <td className="px-4 py-3 font-medium text-slate-800">{customerName(inv.customers)}</td>
+                <td className="px-4 py-3 font-medium text-slate-800">
+                  {customerName(inv.customers)}
+                  {inv.origem && inv.descricao_servico && (
+                    <p className="text-xs font-normal text-slate-400 mt-0.5 max-w-xs">
+                      {inv.descricao_servico}
+                      {inv.pago_em ? ` · pago em ${new Date(inv.pago_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}` : ''}
+                      {` · via ${inv.origem.toUpperCase()}`}
+                    </p>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-slate-700">R$ {inv.valor_servicos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${STATUS_COLOR[inv.status]}`}>{STATUS_LABEL[inv.status]}</span>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${inv.status === 'rascunho' && inv.origem ? 'bg-sky-100 text-sky-700' : STATUS_COLOR[inv.status]}`}>
+                    {inv.status === 'rascunho' && inv.origem ? 'A emitir' : STATUS_LABEL[inv.status]}
+                  </span>
+                  {emitErro?.id === inv.id && <p className="text-xs text-red-500 mt-1 max-w-xs">{emitErro.msg}</p>}
                   {inv.status === 'rejeitada' && inv.motivo_rejeicao && (
                     <p className="text-xs text-red-500 mt-1 max-w-xs">{inv.motivo_rejeicao}</p>
                   )}
@@ -133,6 +163,12 @@ export default function NotasClient({ initialInvoices, customers, servicos }: { 
                 </td>
                 <td className="px-4 py-3 text-slate-400 text-xs font-mono">{inv.chave_acesso ? `${inv.chave_acesso.slice(0, 12)}…` : '—'}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
+                  {(inv.status === 'rascunho' || (inv.status === 'rejeitada' && inv.origem)) && inv.descricao_servico && (
+                    <button onClick={() => emitirPendente(inv)} disabled={emitindoId !== null}
+                      className="bg-[var(--brand-primary)] hover:brightness-110 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition disabled:opacity-50">
+                      {emitindoId === inv.id ? 'Emitindo...' : inv.status === 'rejeitada' ? 'Emitir de novo' : 'Emitir'}
+                    </button>
+                  )}
                   {inv.status === 'autorizada' && (
                     <>
                       <a href={`/api/faturamento/invoices/${inv.id}/danfse`} target="_blank" rel="noreferrer"
